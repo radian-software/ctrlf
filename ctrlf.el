@@ -53,6 +53,9 @@ inherits from `minibuffer-local-map'. "
           :key-type sexp
           :value-type function))
 
+(defvar ctrlf-search-history nil
+  "History of searches that were not canceled.")
+
 (defvar ctrlf--backwardp nil
   "Non-nil means we are currently searching backward.
 Nil means we are currently searching forward.")
@@ -138,7 +141,7 @@ Nil means we are searching using a literal string.")
            'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook nil 'local)
           (add-hook 'post-command-hook #'ctrlf--minibuffer-post-command-hook
                     nil 'local))
-      (read-from-minibuffer "Find: " nil keymap))))
+      (read-from-minibuffer "Find: " nil keymap nil 'ctrlf-search-history))))
 
 (defun ctrlf-forward ()
   "Search forward for literal string."
