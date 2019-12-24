@@ -21,7 +21,131 @@
 ;; variable declarations in each section, run M-x occur with the
 ;; following query: ^;;;;* \|^(
 
+(require 'map)
 
+(defgroup ctrlf nil
+  "More streamlined replacement for Isearch, Swiper, etc."
+  :group 'convenience
+  :prefix "ctrlf-"
+  :link '(url-link "https://github.com/raxod502/ctrlf"))
+
+(defcustom ctrlf-mode-bindings
+  '(([remap isearch-forward] . ctrlf-forward)
+    ([remap isearch-backward] . ctrlf-backward)
+    ([remap isearch-forward-regexp] . ctrlf-forward-regexp)
+    ([remap isearch-backward-regexp] . ctrlf-backward-regexp))
+  "Keybindings enabled in `ctrlf-mode'.
+These take effect when `ctrlf-mode' is (re-)enabled."
+  :type '(alist
+          :key-type sexp
+          :value-type function))
+
+(defvar ctrlf--original-window nil
+  "The window being searched.")
+
+(defvar ctrlf--backwardp nil
+  "Non-nil means we are currently searching backward.
+Nil means we are currently searching forward.")
+
+(defvar ctrlf--regexpp nil
+  "Non-nil means we are searching using a regexp.
+Nil means we are searching using a literal string.")
+
+(defun ctrlf--minibuffer-exit-hook ()
+  "Clean up CTRLF from the minibuffer, and self-destruct this hook."
+  (remove-hook
+   'post-command-hook #'ctrlf--minibuffer-post-command-hook 'local)
+  (remove-hook 'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook 'local))
+
+(defvar ctrlf--last-input nil
+  "Previous user input, or nil if none yet.")
+
+(defvar ctrlf--starting-point nil
+  "Value of point from when search was started.")
+
+(defun ctrlf--minibuffer-post-command-hook ()
+  "Deal with updated user input."
+  (let ((input (field-string (point-max))))
+    (unless (equal input ctrlf--last-input)
+      (setq ctrlf--last-input input)
+      (with-current-buffer (window-buffer ctrlf--original-window)
+        (let ((prev-point (point)))
+          (goto-char ctrlf--starting-point)
+          (unless (funcall
+                   (if ctrlf--backwardp
+                       (if ctrlf--regexpp
+                           #'re-search-backward
+                         #'search-backward)
+                     (if ctrlf--regexpp
+                         #'re-search-forward
+                       #'search-forward))
+                   input nil 'noerror)
+            (goto-char prev-point))
+          (set-window-point ctrlf--original-window (point)))))))
+
+(defun ctrlf--start ()
+  "Start CTRLF session assuming config vars are set up already."
+  (setq ctrlf--original-window (selected-window))
+  (setq ctrlf--starting-point (point))
+  (setq ctrlf--last-input nil)
+  (minibuffer-with-setup-hook
+      (lambda ()
+        (add-hook
+         'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook nil 'local)
+        (add-hook 'post-command-hook #'ctrlf--minibuffer-post-command-hook
+                  nil 'local))
+    (read-from-minibuffer "Find: ")))
+
+(defun ctrlf-forward ()
+  "Search forward for literal string."
+  (interactive)
+  (setq ctrlf--backwardp nil)
+  (setq ctrlf--regexpp nil)
+  (ctrlf--start))
+
+(defun ctrlf-backward ()
+  "Search backward for literal string."
+  (interactive)
+  (setq ctrlf--backwardp t)
+  (setq ctrlf--regexpp nil)
+  (ctrlf--start))
+
+(defun ctrlf-forward-regexp ()
+  "Search forward for regexp."
+  (interactive)
+  (setq ctrlf--backwardp nil)
+  (setq ctrlf--regexpp t)
+  (ctrlf--start))
+
+(defun ctrlf-backward-regexp ()
+  "Search backward for regexp."
+  (interactive)
+  (setq ctrlf--backwardp t)
+  (setq ctrlf--regexpp t)
+  (ctrlf--start))
+
+(defvar ctrlf--keymap (make-sparse-keymap)
+  "Keymap for `ctrlf-mode'. Populated when mode is enabled.
+See `ctrlf-mode-bindings'.")
+
+(define-minor-mode ctrlf-mode
+  "Minor mode to use CTRLF in place of Isearch.
+See `ctrlf-mode-bindings' to customize."
+  :global t
+  :keymap ctrlf--keymap
+  (if ctrlf-mode
+      (progn
+        (ctrlf-mode -1)
+        (setq ctrlf-mode t)
+        ;; Hack to clear out keymap. Presumably there's a
+        ;; `clear-keymap' function lying around somewhere...?
+        (setcdr ctrlf--keymap nil)
+        (map-apply
+         (lambda (key cmd)
+           (when (stringp key)
+             (setq key (kbd key)))
+           (define-key ctrlf--keymap key cmd))
+         ctrlf-mode-bindings))))
 
 ;;;; Closing remarks
 
