@@ -34,14 +34,23 @@
     ([remap isearch-backward] . ctrlf-backward)
     ([remap isearch-forward-regexp] . ctrlf-forward-regexp)
     ([remap isearch-backward-regexp] . ctrlf-backward-regexp))
-  "Keybindings enabled in `ctrlf-mode'.
-These take effect when `ctrlf-mode' is (re-)enabled."
+  "Keybindings enabled in `ctrlf-mode'. This is not a keymap.
+Rather it is an alist that is converted into a keymap just before
+`ctrlf-mode' is (re-)enabled. The keys are strings or raw key
+events and the values are command symbols."
   :type '(alist
           :key-type sexp
           :value-type function))
 
-(defvar ctrlf--original-window nil
-  "The window being searched.")
+(defcustom ctrlf-minibuffer-bindings
+  '(("C-g" . ctrlf-cancel))
+  "Keybindings enabled in minibuffer during search. This is not a keymap.
+Rather it is an alist that is converted into a keymap just before
+entering the minibuffer. The keys are strings or raw key events
+and the values are command symbols."
+  :type '(alist
+          :key-type sexp
+          :value-type function))
 
 (defvar ctrlf--backwardp nil
   "Non-nil means we are currently searching backward.
@@ -63,38 +72,71 @@ Nil means we are searching using a literal string.")
 (defvar ctrlf--starting-point nil
   "Value of point from when search was started.")
 
+(defvar ctrlf--minibuffer nil
+  "The minibuffer being used for search.")
+
+(defvar ctrlf--message-overlay nil
+  "Overlay used to display transient message, or nil.")
+
+(defun ctrlf--transient-message (format &rest args)
+  "Display a transient message in the minibuffer."
+  (with-current-buffer ctrlf--minibuffer
+    (setq ctrlf--message-overlay (make-overlay (point-max) (point-max)))
+    ;; Some of this is borrowed from `minibuffer-message'.
+    (let ((string (apply #'format (concat " [" format "]") args)))
+      (put-text-property 0 (length string) 'face 'minibuffer-prompt string)
+      (put-text-property 0 1 'cursor t string)
+      (overlay-put ctrlf--message-overlay 'after-string string))))
+
 (defun ctrlf--minibuffer-post-command-hook ()
   "Deal with updated user input."
-  (let ((input (field-string (point-max))))
-    (unless (equal input ctrlf--last-input)
-      (setq ctrlf--last-input input)
-      (with-current-buffer (window-buffer ctrlf--original-window)
-        (let ((prev-point (point)))
-          (goto-char ctrlf--starting-point)
-          (unless (funcall
-                   (if ctrlf--backwardp
+  (when ctrlf--message-overlay
+    (delete-overlay ctrlf--message-overlay)
+    (setq ctrlf--message-overlay nil))
+  (cl-block nil
+    (let ((input (field-string (point-max))))
+      (when ctrlf--regexpp
+        (condition-case e
+            (string-match-p input "")
+          (invalid-regexp
+           (ctrlf--transient-message "Invalid regexp: %s" (cadr e))
+           (cl-return))))
+      (unless (equal input ctrlf--last-input)
+        (setq ctrlf--last-input input)
+        (with-current-buffer (window-buffer (minibuffer-selected-window))
+          (let ((prev-point (point)))
+            (goto-char ctrlf--starting-point)
+            (unless (funcall
+                     (if ctrlf--backwardp
+                         (if ctrlf--regexpp
+                             #'re-search-backward
+                           #'search-backward)
                        (if ctrlf--regexpp
-                           #'re-search-backward
-                         #'search-backward)
-                     (if ctrlf--regexpp
-                         #'re-search-forward
-                       #'search-forward))
-                   input nil 'noerror)
-            (goto-char prev-point))
-          (set-window-point ctrlf--original-window (point)))))))
+                           #'re-search-forward
+                         #'search-forward))
+                     input nil 'noerror)
+              (goto-char prev-point))
+            (set-window-point (minibuffer-selected-window) (point))))))))
 
 (defun ctrlf--start ()
   "Start CTRLF session assuming config vars are set up already."
-  (setq ctrlf--original-window (selected-window))
-  (setq ctrlf--starting-point (point))
-  (setq ctrlf--last-input nil)
-  (minibuffer-with-setup-hook
-      (lambda ()
-        (add-hook
-         'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook nil 'local)
-        (add-hook 'post-command-hook #'ctrlf--minibuffer-post-command-hook
-                  nil 'local))
-    (read-from-minibuffer "Find: ")))
+  (let ((keymap (make-sparse-keymap)))
+    (map-apply
+     (lambda (key cmd)
+       (when (stringp key)
+         (setq key (kbd key)))
+       (define-key keymap key cmd))
+     ctrlf-minibuffer-bindings)
+    (setq ctrlf--starting-point (point))
+    (setq ctrlf--last-input nil)
+    (minibuffer-with-setup-hook
+        (lambda ()
+          (setq ctrlf--minibuffer (current-buffer))
+          (add-hook
+           'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook nil 'local)
+          (add-hook 'post-command-hook #'ctrlf--minibuffer-post-command-hook
+                    nil 'local))
+      (read-from-minibuffer "Find: " nil keymap))))
 
 (defun ctrlf-forward ()
   "Search forward for literal string."
@@ -123,6 +165,12 @@ Nil means we are searching using a literal string.")
   (setq ctrlf--backwardp t)
   (setq ctrlf--regexpp t)
   (ctrlf--start))
+
+(defun ctrlf-cancel ()
+  "Exit search, returning point to original position."
+  (interactive)
+  (set-window-point (minibuffer-selected-window) ctrlf--starting-point)
+  (abort-recursive-edit))
 
 (defvar ctrlf--keymap (make-sparse-keymap)
   "Keymap for `ctrlf-mode'. Populated when mode is enabled.
