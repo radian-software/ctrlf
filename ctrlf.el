@@ -30,9 +30,9 @@
   :link '(url-link "https://github.com/raxod502/ctrlf"))
 
 (defcustom ctrlf-mode-bindings
-  '(([remap isearch-forward] . ctrlf-forward)
-    ([remap isearch-backward] . ctrlf-backward)
-    ([remap isearch-forward-regexp] . ctrlf-forward-regexp)
+  '(([remap isearch-forward        ] . ctrlf-forward)
+    ([remap isearch-backward       ] . ctrlf-backward)
+    ([remap isearch-forward-regexp ] . ctrlf-forward-regexp)
     ([remap isearch-backward-regexp] . ctrlf-backward-regexp))
   "Keybindings enabled in `ctrlf-mode'. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
@@ -43,11 +43,12 @@ events and the values are command symbols."
           :value-type function))
 
 (defcustom ctrlf-minibuffer-bindings
-  '(("C-g" . ctrlf-cancel))
+  '(([remap minibuffer-keyboard-quit] . ctrlf-cancel))
   "Keybindings enabled in minibuffer during search. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 entering the minibuffer. The keys are strings or raw key events
-and the values are command symbols."
+and the values are command symbols. The keymap so constructed
+inherits from `minibuffer-local-map'. "
   :type '(alist
           :key-type sexp
           :value-type function))
@@ -121,6 +122,7 @@ Nil means we are searching using a literal string.")
 (defun ctrlf--start ()
   "Start CTRLF session assuming config vars are set up already."
   (let ((keymap (make-sparse-keymap)))
+    (set-keymap-parent keymap minibuffer-local-map)
     (map-apply
      (lambda (key cmd)
        (when (stringp key)
