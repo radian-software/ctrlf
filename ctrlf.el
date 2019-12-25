@@ -21,6 +21,7 @@
 ;; variable declarations in each section, run M-x occur with the
 ;; following query: ^;;;;* \|^(
 
+(require 'cl-lib)
 (require 'map)
 
 (defgroup ctrlf nil
@@ -48,7 +49,7 @@ events and the values are command symbols."
 Rather it is an alist that is converted into a keymap just before
 entering the minibuffer. The keys are strings or raw key events
 and the values are command symbols. The keymap so constructed
-inherits from `minibuffer-local-map'. "
+inherits from `minibuffer-local-map'."
   :type '(alist
           :key-type sexp
           :value-type function))
@@ -83,7 +84,8 @@ Nil means we are searching using a literal string.")
   "Overlay used to display transient message, or nil.")
 
 (defun ctrlf--transient-message (format &rest args)
-  "Display a transient message in the minibuffer."
+  "Display a transient message in the minibuffer.
+FORMAT and ARGS are as in `message'."
   (with-current-buffer ctrlf--minibuffer
     (setq ctrlf--message-overlay (make-overlay (point-max) (point-max)))
     ;; Some of this is borrowed from `minibuffer-message'.
