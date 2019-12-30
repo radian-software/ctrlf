@@ -102,6 +102,30 @@ FORMAT and ARGS are as in `message'."
       (put-text-property 0 1 'cursor t string)
       (overlay-put ctrlf--message-overlay 'after-string string))))
 
+(cl-defun ctrlf--search
+    (query &key (regexp :unset) (backward :unset) bound)
+  "Single-buffer text search primitive. Search for QUERY.
+REGEXP controls whether to interpret QUERY literally (nil) or as
+a regexp (non-nil), else check `ctrlf--regexp-p'. BACKWARD
+controls whether to do a forward search (nil) or a backward
+search (non-nil), else check `ctrlf--backward-p'. BOUND, if
+non-nil, is a limit for the search as in `search-forward' and
+friend. Return nil if the search fails, moving point."
+  (let* ((regexp (if (eq regexp :unset)
+                     ctrlf--regexp-p
+                   regexp))
+         (backward (if (eq backward :unset)
+                       ctrlf--backward-p
+                     backward))
+         (func (if backward
+                   (if regexp
+                       #'re-search-backward
+                     #'search-backward)
+                 (if regexp
+                     #'re-search-forward
+                   #'search-forward))))
+    (funcall func query bound 'noerror)))
+
 (defun ctrlf--minibuffer-post-command-hook ()
   "Deal with updated user input."
   (when ctrlf--message-overlay
@@ -120,15 +144,7 @@ FORMAT and ARGS are as in `message'."
         (with-current-buffer (window-buffer (minibuffer-selected-window))
           (let ((prev-point (point)))
             (goto-char ctrlf--starting-point)
-            (unless (funcall
-                     (if ctrlf--backward-p
-                         (if ctrlf--regexp-p
-                             #'re-search-backward
-                           #'search-backward)
-                       (if ctrlf--regexp-p
-                           #'re-search-forward
-                         #'search-forward))
-                     input nil 'noerror)
+            (unless (ctrlf--search input)
               (goto-char prev-point))
             (set-window-point (minibuffer-selected-window) (point))))))))
 
