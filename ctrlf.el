@@ -61,11 +61,11 @@ inherits from `minibuffer-local-map'."
 (defvar ctrlf-search-history nil
   "History of searches that were not canceled.")
 
-(defvar ctrlf--backwardp nil
+(defvar ctrlf--backward-p nil
   "Non-nil means we are currently searching backward.
 Nil means we are currently searching forward.")
 
-(defvar ctrlf--regexpp nil
+(defvar ctrlf--regexp-p nil
   "Non-nil means we are searching using a regexp.
 Nil means we are searching using a literal string.")
 
@@ -105,7 +105,7 @@ FORMAT and ARGS are as in `message'."
     (setq ctrlf--message-overlay nil))
   (cl-block nil
     (let ((input (field-string (point-max))))
-      (when ctrlf--regexpp
+      (when ctrlf--regexp-p
         (condition-case e
             (string-match-p input "")
           (invalid-regexp
@@ -117,11 +117,11 @@ FORMAT and ARGS are as in `message'."
           (let ((prev-point (point)))
             (goto-char ctrlf--starting-point)
             (unless (funcall
-                     (if ctrlf--backwardp
-                         (if ctrlf--regexpp
+                     (if ctrlf--backward-p
+                         (if ctrlf--regexp-p
                              #'re-search-backward
                            #'search-backward)
-                       (if ctrlf--regexpp
+                       (if ctrlf--regexp-p
                            #'re-search-forward
                          #'search-forward))
                      input nil 'noerror)
@@ -152,29 +152,29 @@ FORMAT and ARGS are as in `message'."
 (defun ctrlf-forward ()
   "Search forward for literal string."
   (interactive)
-  (setq ctrlf--backwardp nil)
-  (setq ctrlf--regexpp nil)
+  (setq ctrlf--backward-p nil)
+  (setq ctrlf--regexp-p nil)
   (ctrlf--start))
 
 (defun ctrlf-backward ()
   "Search backward for literal string."
   (interactive)
-  (setq ctrlf--backwardp t)
-  (setq ctrlf--regexpp nil)
+  (setq ctrlf--backward-p t)
+  (setq ctrlf--regexp-p nil)
   (ctrlf--start))
 
 (defun ctrlf-forward-regexp ()
   "Search forward for regexp."
   (interactive)
-  (setq ctrlf--backwardp nil)
-  (setq ctrlf--regexpp t)
+  (setq ctrlf--backward-p nil)
+  (setq ctrlf--regexp-p t)
   (ctrlf--start))
 
 (defun ctrlf-backward-regexp ()
   "Search backward for regexp."
   (interactive)
-  (setq ctrlf--backwardp t)
-  (setq ctrlf--regexpp t)
+  (setq ctrlf--backward-p t)
+  (setq ctrlf--regexp-p t)
   (ctrlf--start))
 
 (defun ctrlf-cancel ()
