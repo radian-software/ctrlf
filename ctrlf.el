@@ -110,10 +110,11 @@ Nil means we are searching using a literal string.")
   "Cons cell of current match beginning and end, or nil if no match.")
 
 (defun ctrlf--minibuffer-exit-hook ()
-  "Clean up CTRLF from buffer and minibuffer."
-  ;; There's no need to clean up the minibuffer-local hooks as they
-  ;; appear to be trashed automatically.
-  (ctrlf--clear-highlight-overlays))
+  "Clean up CTRLF and self-destruct this hook."
+  (ctrlf--clear-highlight-overlays)
+  (remove-hook
+   'post-command-hook #'ctrlf--minibuffer-post-command-hook 'local)
+  (remove-hook 'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook 'local))
 
 (defun ctrlf--transient-message (format &rest args)
   "Display a transient message in the minibuffer.
