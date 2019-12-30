@@ -48,7 +48,11 @@ events and the values are command symbols."
     ;; This is bound in `minibuffer-local-map' by loading `delsel', so
     ;; we have to account for it too.
     ([remap minibuffer-keyboard-quit] . ctrlf-cancel)
-    ([remap ctrlf-forward]            . ignore))
+    ("C-s"                            . ctrlf-next-match)
+    ("TAB"                            . ctrlf-next-match)
+    ("C-r"                            . ctrlf-previous-match)
+    ("S-TAB"                          . ctrlf-previous-match)
+    ("<backtab>"                      . ctrlf-previous-match))
   "Keybindings enabled in minibuffer during search. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 entering the minibuffer. The keys are strings or raw key events
@@ -82,7 +86,7 @@ Nil means we are currently searching forward.")
 Nil means we are searching using a literal string.")
 
 (defun ctrlf--minibuffer-exit-hook ()
-  "Clean up CTRLF from the minibuffer, and self-destruct this hook."
+  "Clean up CTRLF and self-destruct this hook."
   (ctrlf--clear-highlight-overlays)
   (remove-hook
    'post-command-hook #'ctrlf--minibuffer-post-command-hook 'local)
@@ -94,6 +98,9 @@ Nil means we are searching using a literal string.")
 (defvar ctrlf--starting-point nil
   "Value of point from when search was started.")
 
+(defvar ctrlf--current-starting-point nil
+  "Value of point from which to search.")
+
 (defvar ctrlf--minibuffer nil
   "The minibuffer being used for search.")
 
@@ -102,6 +109,9 @@ Nil means we are searching using a literal string.")
 
 (defvar ctrlf--highlight-overlays nil
   "List of active overlays used for highlighting.")
+
+(defvar ctrlf--match-bounds nil
+  "Cons cell of current match beginning and end, or nil if no match.")
 
 (defun ctrlf--transient-message (format &rest args)
   "Display a transient message in the minibuffer.
@@ -164,8 +174,7 @@ still move point."
     (delete-overlay ctrlf--message-overlay)
     (setq ctrlf--message-overlay nil))
   (cl-block nil
-    (let ((input (field-string (point-max)))
-          (no-passive-highlight-zone nil))
+    (let ((input (field-string (point-max))))
       (when ctrlf--regexp-p
         (condition-case e
             (string-match-p input "")
@@ -174,14 +183,15 @@ still move point."
            (cl-return))))
       (unless (equal input ctrlf--last-input)
         (setq ctrlf--last-input input)
+        (setq ctrlf--match-bounds nil)
         (ctrlf--clear-highlight-overlays)
         (with-current-buffer (window-buffer (minibuffer-selected-window))
           (let ((prev-point (point)))
-            (goto-char ctrlf--starting-point)
+            (goto-char ctrlf--current-starting-point)
             (if (ctrlf--search input)
                 (progn
                   (goto-char (match-beginning 0))
-                  (setq no-passive-highlight-zone
+                  (setq ctrlf--match-bounds
                         (cons (match-beginning 0)
                               (match-end 0)))
                   (let ((ol (make-overlay (match-beginning 0) (match-end 0))))
@@ -202,11 +212,11 @@ still move point."
                     ;; point to avoid infinite loop.
                     (ignore-errors
                       (forward-char))
-                  (when (or (null no-passive-highlight-zone)
+                  (when (or (null ctrlf--match-bounds)
                             (<= (match-end 0)
-                                (car no-passive-highlight-zone))
+                                (car ctrlf--match-bounds))
                             (>= (match-beginning 0)
-                                (cdr no-passive-highlight-zone)))
+                                (cdr ctrlf--match-bounds)))
                     (let ((ol (make-overlay
                                (match-beginning 0) (match-end 0))))
                       (overlay-put ol 'face 'ctrlf-highlight-passive)
@@ -223,6 +233,7 @@ still move point."
        (define-key keymap key cmd))
      ctrlf-minibuffer-bindings)
     (setq ctrlf--starting-point (point))
+    (setq ctrlf--current-starting-point (point))
     (setq ctrlf--last-input nil)
     (minibuffer-with-setup-hook
         (lambda ()
@@ -279,6 +290,28 @@ still move point."
   (setq ctrlf--backward-p t)
   (setq ctrlf--regexp-p t)
   (ctrlf--start))
+
+(defun ctrlf-next-match ()
+  "Move to next match, if there is one. Wrap around if necessary."
+  (interactive)
+  (when ctrlf--match-bounds
+    ;; Move past current match.
+    (setq ctrlf--current-starting-point (cdr ctrlf--match-bounds))
+    ;; Next search should go forward.
+    (setq ctrlf--backward-p nil)
+    ;; Force recalculation of search.
+    (setq ctrlf--last-input nil)))
+
+(defun ctrlf-previous-match ()
+  "Move to previous match, if there is one. Wrap around if necessary."
+  (interactive)
+  (when ctrlf--match-bounds
+    ;; Move before current match.
+    (setq ctrlf--current-starting-point (car ctrlf--match-bounds))
+    ;; Previous search should go backward.
+    (setq ctrlf--backward-p t)
+    ;; Force recalculation of search.
+    (setq ctrlf--last-input nil)))
 
 (defun ctrlf-cancel ()
   "Exit search, returning point to original position."
