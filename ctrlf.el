@@ -58,6 +58,14 @@ inherits from `minibuffer-local-map'."
           :key-type sexp
           :value-type function))
 
+(defface ctrlf-highlight-active
+  '((t :inherit isearch))
+  "Face used to highlight current match.")
+
+(defface ctrlf-highlight-passive
+  '((t :inherit lazy-highlight))
+  "Face used to highlight other matches in the buffer.")
+
 (defvar ctrlf-search-history nil
   "History of searches that were not canceled.")
 
@@ -75,6 +83,7 @@ Nil means we are searching using a literal string.")
 
 (defun ctrlf--minibuffer-exit-hook ()
   "Clean up CTRLF from the minibuffer, and self-destruct this hook."
+  (ctrlf--clear-highlight-overlays)
   (remove-hook
    'post-command-hook #'ctrlf--minibuffer-post-command-hook 'local)
   (remove-hook 'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook 'local))
@@ -102,21 +111,39 @@ FORMAT and ARGS are as in `message'."
       (put-text-property 0 1 'cursor t string)
       (overlay-put ctrlf--message-overlay 'after-string string))))
 
+(defvar ctrlf--highlight-overlays nil
+  "List of active overlays used for highlighting.")
+
 (cl-defun ctrlf--search
-    (query &key (regexp :unset) (backward :unset) bound)
+    (query &key
+           (regexp :unset) (backward :unset)
+           (literal :unset) (forward :unset)
+           bound)
   "Single-buffer text search primitive. Search for QUERY.
 REGEXP controls whether to interpret QUERY literally (nil) or as
 a regexp (non-nil), else check `ctrlf--regexp-p'. BACKWARD
 controls whether to do a forward search (nil) or a backward
-search (non-nil), else check `ctrlf--backward-p'. BOUND, if
-non-nil, is a limit for the search as in `search-forward' and
-friend. Return nil if the search fails, moving point."
-  (let* ((regexp (if (eq regexp :unset)
-                     ctrlf--regexp-p
-                   regexp))
-         (backward (if (eq backward :unset)
-                       ctrlf--backward-p
-                     backward))
+search (non-nil), else check `ctrlf--backward-p'. LITERAL and
+FORWARD do the same but the meaning of their arguments are
+inverted. BOUND, if non-nil, is a limit for the search as in
+`search-forward' and friend. If the search succeeds, move point
+to the end (for forward searches) or beginning (for backward
+searches) of the match. If the search fails, return nil, but
+still move point."
+  (let* ((regexp (cond
+                  ((not (eq regexp :unset))
+                   regexp)
+                  ((not (eq literal :unset))
+                   (not literal))
+                  (t
+                   ctrlf--regexp-p)))
+         (backward (cond
+                    ((not (eq backward :unset))
+                     backward)
+                    ((not (eq forward :unset))
+                     (not forward))
+                    (t
+                     ctrlf--backward-p)))
          (func (if backward
                    (if regexp
                        #'re-search-backward
@@ -125,6 +152,11 @@ friend. Return nil if the search fails, moving point."
                      #'re-search-forward
                    #'search-forward))))
     (funcall func query bound 'noerror)))
+
+(defun ctrlf--clear-highlight-overlays ()
+  "Delete all overlays used for highlighting."
+  (while ctrlf--highlight-overlays
+    (delete-overlay (pop ctrlf--highlight-overlays))))
 
 (defun ctrlf--minibuffer-post-command-hook ()
   "Deal with updated user input."
@@ -144,9 +176,27 @@ friend. Return nil if the search fails, moving point."
         (with-current-buffer (window-buffer (minibuffer-selected-window))
           (let ((prev-point (point)))
             (goto-char ctrlf--starting-point)
-            (unless (ctrlf--search input)
+            (if (ctrlf--search input)
+                (goto-char (match-beginning 0))
               (goto-char prev-point))
-            (set-window-point (minibuffer-selected-window) (point))))))))
+            (set-window-point (minibuffer-selected-window) (point)))
+          (ctrlf--clear-highlight-overlays)
+          ;; Apparently `window-end' takes an UPDATE argument but
+          ;; `window-start' doesn't? Okay then.
+          (let ((start (window-start (minibuffer-selected-window)))
+                (end (window-end (minibuffer-selected-window) 'update)))
+            (save-excursion
+              (goto-char start)
+              (while (and (< (point) end)
+                          (ctrlf--search input :forward t :bound end))
+                (if (= (match-beginning 0) (match-end 0))
+                    ;; Zero-length match, no need to highlight. Advance
+                    ;; point to avoid infinite loop.
+                    (ignore-errors
+                      (forward-char))
+                  (let ((ol (make-overlay (match-beginning 0) (match-end 0))))
+                    (overlay-put ol 'face 'ctrlf-highlight-passive)
+                    (push ol ctrlf--highlight-overlays)))))))))))
 
 (defun ctrlf--start ()
   "Start CTRLF session assuming config vars are set up already."
@@ -210,6 +260,7 @@ friend. Return nil if the search fails, moving point."
 (defun ctrlf-cancel ()
   "Exit search, returning point to original position."
   (interactive)
+  (ctrlf--clear-highlight-overlays)
   (set-window-point (minibuffer-selected-window) ctrlf--starting-point)
   (abort-recursive-edit))
 
