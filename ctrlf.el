@@ -88,11 +88,10 @@ Nil means we are currently searching forward.")
 Nil means we are searching using a literal string.")
 
 (defun ctrlf--minibuffer-exit-hook ()
-  "Clean up CTRLF and self-destruct this hook."
-  (ctrlf--clear-highlight-overlays)
-  (remove-hook
-   'post-command-hook #'ctrlf--minibuffer-post-command-hook 'local)
-  (remove-hook 'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook 'local))
+  "Clean up CTRLF from buffer and minibuffer."
+  ;; There's no need to clean up the minibuffer-local hooks as they
+  ;; appear to be trashed automatically.
+  (ctrlf--clear-highlight-overlays))
 
 (defvar ctrlf--last-input nil
   "Previous user input, or nil if none yet.")
