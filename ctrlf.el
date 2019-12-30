@@ -115,7 +115,11 @@ Nil means we are searching using a literal string.")
 
 (defun ctrlf--transient-message (format &rest args)
   "Display a transient message in the minibuffer.
-FORMAT and ARGS are as in `message'."
+FORMAT and ARGS are as in `message'. This function behaves
+exactly the same as `message' in Emacs 27 and later, and it acts
+as a backport for Emacs 26 and earlier where signaling a message
+while the minibuffer is active causes an absolutely horrendous
+mess."
   (with-current-buffer ctrlf--minibuffer
     (setq ctrlf--message-overlay (make-overlay (point-max) (point-max)))
     ;; Some of this is borrowed from `minibuffer-message'.
