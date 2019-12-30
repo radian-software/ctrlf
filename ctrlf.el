@@ -296,22 +296,22 @@ still move point."
   (interactive)
   (when ctrlf--match-bounds
     ;; Move past current match.
-    (setq ctrlf--current-starting-point (cdr ctrlf--match-bounds))
-    ;; Next search should go forward.
-    (setq ctrlf--backward-p nil)
-    ;; Force recalculation of search.
-    (setq ctrlf--last-input nil)))
+    (setq ctrlf--current-starting-point (cdr ctrlf--match-bounds)))
+  ;; Next search should go forward.
+  (setq ctrlf--backward-p nil)
+  ;; Force recalculation of search.
+  (setq ctrlf--last-input nil))
 
 (defun ctrlf-previous-match ()
   "Move to previous match, if there is one. Wrap around if necessary."
   (interactive)
   (when ctrlf--match-bounds
     ;; Move before current match.
-    (setq ctrlf--current-starting-point (car ctrlf--match-bounds))
-    ;; Previous search should go backward.
-    (setq ctrlf--backward-p t)
-    ;; Force recalculation of search.
-    (setq ctrlf--last-input nil)))
+    (setq ctrlf--current-starting-point (car ctrlf--match-bounds)))
+  ;; Next search should go backward.
+  (setq ctrlf--backward-p t)
+  ;; Force recalculation of search.
+  (setq ctrlf--last-input nil))
 
 (defun ctrlf-next-match-or-previous-history-element ()
   "Move to next match or re-start last search.
