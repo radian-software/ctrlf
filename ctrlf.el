@@ -23,6 +23,7 @@
 
 (require 'cl-lib)
 (require 'map)
+(require 'subr-x)
 
 (defgroup ctrlf nil
   "More streamlined replacement for Isearch, Swiper, etc."
@@ -87,12 +88,6 @@ Nil means we are currently searching forward.")
   "Non-nil means we are searching using a regexp.
 Nil means we are searching using a literal string.")
 
-(defun ctrlf--minibuffer-exit-hook ()
-  "Clean up CTRLF from buffer and minibuffer."
-  ;; There's no need to clean up the minibuffer-local hooks as they
-  ;; appear to be trashed automatically.
-  (ctrlf--clear-highlight-overlays))
-
 (defvar ctrlf--last-input nil
   "Previous user input, or nil if none yet.")
 
@@ -113,6 +108,12 @@ Nil means we are searching using a literal string.")
 
 (defvar ctrlf--match-bounds nil
   "Cons cell of current match beginning and end, or nil if no match.")
+
+(defun ctrlf--minibuffer-exit-hook ()
+  "Clean up CTRLF from buffer and minibuffer."
+  ;; There's no need to clean up the minibuffer-local hooks as they
+  ;; appear to be trashed automatically.
+  (ctrlf--clear-highlight-overlays))
 
 (defun ctrlf--transient-message (format &rest args)
   "Display a transient message in the minibuffer.
@@ -140,11 +141,13 @@ a regexp (non-nil), else check `ctrlf--regexp-p'. BACKWARD
 controls whether to do a forward search (nil) or a backward
 search (non-nil), else check `ctrlf--backward-p'. LITERAL and
 FORWARD do the same but the meaning of their arguments are
-inverted. BOUND, if non-nil, is a limit for the search as in
-`search-forward' and friend. If the search succeeds, move point
-to the end (for forward searches) or beginning (for backward
-searches) of the match. If the search fails, return nil, but
-still move point."
+inverted. WRAPAROUND means keep searching at the beginning (or
+end, respectively) of the buffer, rather than stopping. BOUND, if
+non-nil, is a limit for the search as in `search-forward' and
+friend. Providing BOUND automatically disables WRAPAROUND. If the
+search succeeds, move point to the end (for forward searches) or
+beginning (for backward searches) of the match. If the search
+fails, return nil, but still move point."
   (let* ((regexp (cond
                   ((not (eq regexp :unset))
                    regexp)
@@ -159,6 +162,7 @@ still move point."
                      (not forward))
                     (t
                      ctrlf--backward-p)))
+         (wraparound (and wraparound (not bound)))
          (func (if backward
                    (if regexp
                        #'re-search-backward
