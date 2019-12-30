@@ -296,19 +296,18 @@ See `ctrlf-mode-bindings'.")
 See `ctrlf-mode-bindings' to customize."
   :global t
   :keymap ctrlf--keymap
-  (if ctrlf-mode
-      (progn
-        (ctrlf-mode -1)
-        (setq ctrlf-mode t)
-        ;; Hack to clear out keymap. Presumably there's a
-        ;; `clear-keymap' function lying around somewhere...?
-        (setcdr ctrlf--keymap nil)
-        (map-apply
-         (lambda (key cmd)
-           (when (stringp key)
-             (setq key (kbd key)))
-           (define-key ctrlf--keymap key cmd))
-         ctrlf-mode-bindings))))
+  (when ctrlf-mode
+    (ctrlf-mode -1)
+    (setq ctrlf-mode t)
+    ;; Hack to clear out keymap. Presumably there's a `clear-keymap'
+    ;; function lying around somewhere...?
+    (setcdr ctrlf--keymap nil)
+    (map-apply
+     (lambda (key cmd)
+       (when (stringp key)
+         (setq key (kbd key)))
+       (define-key ctrlf--keymap key cmd))
+     ctrlf-mode-bindings)))
 
 ;;;; Closing remarks
 
