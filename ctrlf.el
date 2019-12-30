@@ -100,8 +100,11 @@ Nil means we are searching using a literal string.")
 (defvar ctrlf--minibuffer nil
   "The minibuffer being used for search.")
 
-(defvar ctrlf--overlays nil
-  "List of all overlays used by CTRLF.")
+(defvar ctrlf--persistent-overlays nil
+  "List of persistent overlays used by CTRLF.")
+
+(defvar ctrlf--transient-overlays nil
+  "List of transient overlays used by CTRLF.")
 
 (defvar ctrlf--match-bounds nil
   "Cons cell of current match beginning and end, or nil if no match.")
@@ -128,13 +131,20 @@ Assume that S2 has the same properties throughout."
 (defun ctrlf--minibuffer-exit-hook ()
   "Clean up CTRLF from minibuffer and self-destruct this hook."
   (setq ctrlf--final-window-start (window-start (minibuffer-selected-window)))
-  (ctrlf--clear-overlays)
+  (ctrlf--clear-transient-overlays)
+  (ctrlf--clear-persistent-overlays)
   (remove-hook
    'post-command-hook #'ctrlf--minibuffer-post-command-hook 'local)
   (remove-hook 'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook 'local)
   (add-hook 'post-command-hook #'ctrlf--finalize))
 
-(defun ctrlf--transient-message (format &rest args)
+(defvar ctrlf--persist-messages t
+  "Whether `ctrlf--message' will show persistent messages.
+If non-nil, then messages will persist until the next
+recomputation of CTRLF's overlays. Persistent messages will be
+shown to the left of transient messages.")
+
+(defun ctrlf--message (format &rest args)
   "Display a transient message in the minibuffer.
 FORMAT and ARGS are as in `message'. This function behaves
 exactly the same as `message' in Emacs 27 and later, and it acts
@@ -143,7 +153,9 @@ while the minibuffer is active causes an absolutely horrendous
 mess."
   (with-current-buffer ctrlf--minibuffer
     (let ((ol (make-overlay (point-max) (point-max))))
-      (push ol ctrlf--overlays)
+      (if ctrlf--persist-messages
+          (push ol ctrlf--persistent-overlays)
+        (push ol ctrlf--transient-overlays))
       ;; Some of this is borrowed from `minibuffer-message'.
       (let ((string (apply #'format (concat " [" format "]") args)))
         (put-text-property 0 (length string) 'face 'minibuffer-prompt string)
@@ -207,10 +219,15 @@ fails, return nil, but still move point."
    (if ctrlf--regexp-p "regexp" "literal")
    ": "))
 
-(defun ctrlf--clear-overlays ()
-  "Delete all overlays."
-  (while ctrlf--overlays
-    (delete-overlay (pop ctrlf--overlays))))
+(defun ctrlf--clear-transient-overlays ()
+  "Delete the transient overlays created by CTRLF."
+  (while ctrlf--transient-overlays
+    (delete-overlay (pop ctrlf--transient-overlays))))
+
+(defun ctrlf--clear-persistent-overlays ()
+  "Delete the persistent overlays created by CTRLF."
+  (while ctrlf--persistent-overlays
+    (delete-overlay (pop ctrlf--persistent-overlays))))
 
 (defun ctrlf--minibuffer-post-command-hook ()
   "Deal with updated user input."
@@ -223,6 +240,7 @@ fails, return nil, but still move point."
       (insert new-prompt)))
   (when (< (point) (field-end (point-min)))
     (goto-char (field-end (point-min))))
+  (ctrlf--clear-transient-overlays)
   (cl-block nil
     (let ((input (field-string (point-max))))
       (if ctrlf--regexp-p
@@ -233,13 +251,12 @@ fails, return nil, but still move point."
                 ;; implementation more complicated and slower.
                 (cl-return))
             (invalid-regexp
-             (ctrlf--transient-message "Invalid regexp: %s" (cadr e))
+             (ctrlf--message "Invalid regexp: %s" (cadr e))
              (cl-return)))
         ;; Also exclude zero-length matches for literal searches.
         (when (string-empty-p input)
           (cl-return)))
-      (if (equal input ctrlf--last-input)
-          (ctrlf--clear-overlays)
+      (unless (equal input ctrlf--last-input)
         (setq ctrlf--last-input input)
         (with-current-buffer (window-buffer (minibuffer-selected-window))
           (let ((prev-point (point)))
@@ -261,7 +278,7 @@ fails, return nil, but still move point."
           ;; redisplays. Otherwise the user can see a partial set of
           ;; overlays for a split second.
           (redisplay)
-          (ctrlf--clear-overlays)
+          (ctrlf--clear-persistent-overlays)
           (when ctrlf--match-bounds
             (let ((cur-point (point))
                   (num-matches 0)
@@ -275,11 +292,13 @@ fails, return nil, but still move point."
                     (setq cur-index num-matches))))
               (with-current-buffer ctrlf--minibuffer
                 (when cur-index
-                  (ctrlf--transient-message "%d/%d" cur-index num-matches)))))
+                  (let ((ctrlf--persist-messages t))
+                    (ctrlf--message
+                     "%d/%d" cur-index num-matches))))))
           (when ctrlf--match-bounds
             (let ((ol (make-overlay
                        (car ctrlf--match-bounds) (cdr ctrlf--match-bounds))))
-              (push ol ctrlf--overlays)
+              (push ol ctrlf--persistent-overlays)
               (overlay-put ol 'face 'ctrlf-highlight-active)))
           (let ((start (window-start (minibuffer-selected-window)))
                 (end (window-end (minibuffer-selected-window))))
@@ -293,7 +312,7 @@ fails, return nil, but still move point."
                               (cdr ctrlf--match-bounds)))
                   (let ((ol (make-overlay
                              (match-beginning 0) (match-end 0))))
-                    (push ol ctrlf--overlays)
+                    (push ol ctrlf--persistent-overlays)
                     (overlay-put ol 'face 'ctrlf-highlight-passive)))))))))))
 
 (defun ctrlf--start ()
@@ -432,7 +451,8 @@ direction is backwards."
 (defun ctrlf-cancel ()
   "Exit search, returning point to original position."
   (interactive)
-  (ctrlf--clear-overlays)
+  (ctrlf--clear-transient-overlays)
+  (ctrlf--clear-persistent-overlays)
   (set-window-point (minibuffer-selected-window) ctrlf--starting-point)
   (abort-recursive-edit))
 
