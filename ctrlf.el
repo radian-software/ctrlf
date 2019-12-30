@@ -109,14 +109,23 @@ Nil means we are searching using a literal string.")
 (defvar ctrlf--match-bounds nil
   "Cons cell of current match beginning and end, or nil if no match.")
 
+(defvar ctrlf--final-window-start nil
+  "Original buffer's `window-start' just before exiting minibuffer.
+For some reason this gets trashed when exiting the minibuffer, so
+we restore it to keep the scroll position consistent.
+
+I have literally no idea why this is needed.")
+
 (defun ctrlf--finalize ()
   "Perform cleanup that has to happen after the minibuffer is exited."
   (remove-hook 'post-command-hook #'ctrlf--finalize)
   (unless (= (point) ctrlf--starting-point)
-    (push-mark ctrlf--starting-point)))
+    (push-mark ctrlf--starting-point))
+  (set-window-start nil ctrlf--final-window-start))
 
 (defun ctrlf--minibuffer-exit-hook ()
   "Clean up CTRLF from minibuffer and self-destruct this hook."
+  (setq ctrlf--final-window-start (window-start (minibuffer-selected-window)))
   (ctrlf--clear-highlight-overlays)
   (remove-hook
    'post-command-hook #'ctrlf--minibuffer-post-command-hook 'local)
