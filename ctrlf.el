@@ -176,17 +176,18 @@ still move point."
         (setq ctrlf--last-input input)
         (ctrlf--clear-highlight-overlays)
         (with-current-buffer (window-buffer (minibuffer-selected-window))
-          (goto-char ctrlf--starting-point)
-          (if (ctrlf--search input)
-              (progn
-                (goto-char (match-beginning 0))
-                (setq no-passive-highlight-zone
-                      (cons (match-beginning 0)
-                            (match-end 0)))
-                (let ((ol (make-overlay (match-beginning 0) (match-end 0))))
-                  (overlay-put ol 'face 'ctrlf-highlight-active)
-                  (push ol ctrlf--highlight-overlays)))
-            (goto-char prev-point))
+          (let ((prev-point (point)))
+            (goto-char ctrlf--starting-point)
+            (if (ctrlf--search input)
+                (progn
+                  (goto-char (match-beginning 0))
+                  (setq no-passive-highlight-zone
+                        (cons (match-beginning 0)
+                              (match-end 0)))
+                  (let ((ol (make-overlay (match-beginning 0) (match-end 0))))
+                    (overlay-put ol 'face 'ctrlf-highlight-active)
+                    (push ol ctrlf--highlight-overlays)))
+              (goto-char prev-point)))
           (set-window-point (minibuffer-selected-window) (point))
           ;; Apparently `window-end' takes an UPDATE argument but
           ;; `window-start' doesn't? Okay then.
@@ -201,7 +202,8 @@ still move point."
                     ;; point to avoid infinite loop.
                     (ignore-errors
                       (forward-char))
-                  (when (or (<= (match-end 0)
+                  (when (or (null no-passive-highlight-zone)
+                            (<= (match-end 0)
                                 (car no-passive-highlight-zone))
                             (>= (match-beginning 0)
                                 (cdr no-passive-highlight-zone)))
