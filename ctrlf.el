@@ -160,7 +160,9 @@ mess."
       (let ((string (apply #'format (concat " [" format "]") args)))
         (put-text-property 0 (length string) 'face 'minibuffer-prompt string)
         (put-text-property 0 1 'cursor t string)
-        (overlay-put ol 'after-string string)))))
+        (overlay-put ol 'after-string string)
+        (when ctrlf--persist-messages
+          (overlay-put ol 'priority 1))))))
 
 (cl-defun ctrlf--search
     (query &key
