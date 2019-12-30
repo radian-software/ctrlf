@@ -164,7 +164,8 @@ still move point."
     (delete-overlay ctrlf--message-overlay)
     (setq ctrlf--message-overlay nil))
   (cl-block nil
-    (let ((input (field-string (point-max))))
+    (let ((input (field-string (point-max)))
+          (no-passive-highlight-zone nil))
       (when ctrlf--regexp-p
         (condition-case e
             (string-match-p input "")
@@ -173,14 +174,20 @@ still move point."
            (cl-return))))
       (unless (equal input ctrlf--last-input)
         (setq ctrlf--last-input input)
+        (ctrlf--clear-highlight-overlays)
         (with-current-buffer (window-buffer (minibuffer-selected-window))
-          (let ((prev-point (point)))
-            (goto-char ctrlf--starting-point)
-            (if (ctrlf--search input)
+          (goto-char ctrlf--starting-point)
+          (if (ctrlf--search input)
+              (progn
                 (goto-char (match-beginning 0))
-              (goto-char prev-point))
-            (set-window-point (minibuffer-selected-window) (point)))
-          (ctrlf--clear-highlight-overlays)
+                (setq no-passive-highlight-zone
+                      (cons (match-beginning 0)
+                            (match-end 0)))
+                (let ((ol (make-overlay (match-beginning 0) (match-end 0))))
+                  (overlay-put ol 'face 'ctrlf-highlight-active)
+                  (push ol ctrlf--highlight-overlays)))
+            (goto-char prev-point))
+          (set-window-point (minibuffer-selected-window) (point))
           ;; Apparently `window-end' takes an UPDATE argument but
           ;; `window-start' doesn't? Okay then.
           (let ((start (window-start (minibuffer-selected-window)))
@@ -194,9 +201,14 @@ still move point."
                     ;; point to avoid infinite loop.
                     (ignore-errors
                       (forward-char))
-                  (let ((ol (make-overlay (match-beginning 0) (match-end 0))))
-                    (overlay-put ol 'face 'ctrlf-highlight-passive)
-                    (push ol ctrlf--highlight-overlays)))))))))))
+                  (when (or (<= (match-end 0)
+                                (car no-passive-highlight-zone))
+                            (>= (match-beginning 0)
+                                (cdr no-passive-highlight-zone)))
+                    (let ((ol (make-overlay
+                               (match-beginning 0) (match-end 0))))
+                      (overlay-put ol 'face 'ctrlf-highlight-passive)
+                      (push ol ctrlf--highlight-overlays))))))))))))
 
 (defun ctrlf--start ()
   "Start CTRLF session assuming config vars are set up already."
