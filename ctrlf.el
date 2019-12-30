@@ -206,8 +206,6 @@ fails, return nil, but still move point."
            (cl-return))))
       (unless (equal input ctrlf--last-input)
         (setq ctrlf--last-input input)
-        (setq ctrlf--match-bounds nil)
-        (ctrlf--clear-highlight-overlays)
         (with-current-buffer (window-buffer (minibuffer-selected-window))
           (let ((prev-point (point)))
             (goto-char ctrlf--current-starting-point)
@@ -216,16 +214,26 @@ fails, return nil, but still move point."
                   (goto-char (match-beginning 0))
                   (setq ctrlf--match-bounds
                         (cons (match-beginning 0)
-                              (match-end 0)))
-                  (let ((ol (make-overlay (match-beginning 0) (match-end 0))))
-                    (overlay-put ol 'face 'ctrlf-highlight-active)
-                    (push ol ctrlf--highlight-overlays)))
-              (goto-char prev-point)))
+                              (match-end 0))))
+              (goto-char prev-point)
+              (setq ctrlf--match-bounds nil)))
           (set-window-point (minibuffer-selected-window) (point))
-          ;; Apparently `window-end' takes an UPDATE argument but
-          ;; `window-start' doesn't? Okay then.
+          ;; Force redisplay to make sure the window bounds are
+          ;; computed correctly, which we need to determine which
+          ;; parts of the buffer to passively highlight. But make sure
+          ;; that we do redisplay before clearing any overlays, so
+          ;; that all the overlay modifications happen between
+          ;; redisplays. Otherwise the user can see a partial set of
+          ;; overlays for a split second.
+          (redisplay)
+          (ctrlf--clear-highlight-overlays)
+          (when ctrlf--match-bounds
+            (let ((ol (make-overlay
+                       (car ctrlf--match-bounds) (cdr ctrlf--match-bounds))))
+              (overlay-put ol 'face 'ctrlf-highlight-active)
+              (push ol ctrlf--highlight-overlays)))
           (let ((start (window-start (minibuffer-selected-window)))
-                (end (window-end (minibuffer-selected-window) 'update)))
+                (end (window-end (minibuffer-selected-window))))
             (save-excursion
               (goto-char start)
               (while (and (< (point) end)
