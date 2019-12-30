@@ -116,6 +116,11 @@ we restore it to keep the scroll position consistent.
 
 I have literally no idea why this is needed.")
 
+(defun ctrlf--copy-properties (s1 s2)
+  "Return a copy of S1 with properties from S2 added.
+Assume that S2 has the same properties throughout."
+  (apply #'propertize s1 (text-properties-at 0 s2)))
+
 (defun ctrlf--finalize ()
   "Perform cleanup that has to happen after the minibuffer is exited."
   (remove-hook 'post-command-hook #'ctrlf--finalize)
@@ -195,6 +200,15 @@ fails, return nil, but still move point."
              (point-min)))
           (funcall func query bound 'noerror)))))
 
+(defun ctrlf--prompt ()
+  "Return the prompt to use in the minibuffer."
+  (concat
+   "CTRLF "
+   (if ctrlf--backward-p "↑" "↓")
+   " "
+   (if ctrlf--regexp-p "regexp" "literal")
+   ": "))
+
 (defun ctrlf--clear-highlight-overlays ()
   "Delete all overlays used for highlighting."
   (while ctrlf--highlight-overlays
@@ -205,6 +219,15 @@ fails, return nil, but still move point."
   (when ctrlf--message-overlay
     (delete-overlay ctrlf--message-overlay)
     (setq ctrlf--message-overlay nil))
+  (save-excursion
+    (let* ((old-prompt (field-string (point-min)))
+           (new-prompt (ctrlf--copy-properties (ctrlf--prompt) old-prompt))
+           (inhibit-read-only t))
+      (goto-char (point-min))
+      (delete-region (point) (field-end (point)))
+      (insert new-prompt)))
+  (when (< (point) (field-end (point-min)))
+    (goto-char (field-end (point-min))))
   (cl-block nil
     (let ((input (field-string (point-max))))
       (when ctrlf--regexp-p
@@ -285,7 +308,7 @@ fails, return nil, but still move point."
       (let ((ctrlf--active-p t)
             (cursor-in-non-selected-windows nil))
         (read-from-minibuffer
-         "Find: " nil keymap nil 'ctrlf-search-history)))))
+         (ctrlf--prompt) nil keymap nil 'ctrlf-search-history)))))
 
 (defun ctrlf-forward ()
   "Search forward for literal string."
@@ -348,19 +371,25 @@ fails, return nil, but still move point."
 (defun ctrlf-next-match-or-previous-history-element ()
   "Move to next match or re-start last search.
 Re-start the last search if there is currently no input, and move
-to next match otherwise."
+to next match otherwise. In either case, the resulting search
+direction is forwards."
   (interactive)
   (if (string-empty-p (field-string (point-max)))
-      (previous-history-element 1)
+      (progn
+        (setq ctrlf--backward-p nil)
+        (previous-history-element 1))
     (ctrlf-next-match)))
 
 (defun ctrlf-previous-match-or-previous-history-element ()
   "Move to previous match or re-start last search.
 Re-start the last search if there is currently no input, and move
-to previous match otherwise."
+to previous match otherwise. In either case, the resulting search
+direction is backwards."
   (interactive)
   (if (string-empty-p (field-string (point-max)))
-      (previous-history-element 1)
+      (progn
+        (setq ctrlf--backward-p t)
+        (previous-history-element 1))
     (ctrlf-previous-match)))
 
 (defun ctrlf-first-match ()
