@@ -48,11 +48,11 @@ events and the values are command symbols."
     ;; This is bound in `minibuffer-local-map' by loading `delsel', so
     ;; we have to account for it too.
     ([remap minibuffer-keyboard-quit] . ctrlf-cancel)
-    ("C-s"                            . ctrlf-next-match)
-    ("TAB"                            . ctrlf-next-match)
-    ("C-r"                            . ctrlf-previous-match)
-    ("S-TAB"                          . ctrlf-previous-match)
-    ("<backtab>"                      . ctrlf-previous-match))
+    ("C-s"       . ctrlf-next-match-or-previous-history-element)
+    ("TAB"       . ctrlf-next-match-or-previous-history-element)
+    ("C-r"       . ctrlf-previous-match-or-previous-history-element)
+    ("S-TAB"     . ctrlf-previous-match-or-previous-history-element)
+    ("<backtab>" . ctrlf-previous-match-or-previous-history-element))
   "Keybindings enabled in minibuffer during search. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 entering the minibuffer. The keys are strings or raw key events
@@ -312,6 +312,24 @@ still move point."
     (setq ctrlf--backward-p t)
     ;; Force recalculation of search.
     (setq ctrlf--last-input nil)))
+
+(defun ctrlf-next-match-or-previous-history-element ()
+  "Move to next match or re-start last search.
+Re-start the last search if there is currently no input, and move
+to next match otherwise."
+  (interactive)
+  (if (string-empty-p (field-string (point-max)))
+      (previous-history-element 1)
+    (ctrlf-next-match)))
+
+(defun ctrlf-previous-match-or-previous-history-element ()
+  "Move to previous match or re-start last search.
+Re-start the last search if there is currently no input, and move
+to previous match otherwise."
+  (interactive)
+  (if (string-empty-p (field-string (point-max)))
+      (previous-history-element 1)
+    (ctrlf-previous-match)))
 
 (defun ctrlf-cancel ()
   "Exit search, returning point to original position."
