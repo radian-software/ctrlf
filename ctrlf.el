@@ -266,15 +266,7 @@ fails, return nil, but still move point."
           (add-hook 'post-command-hook #'ctrlf--minibuffer-post-command-hook
                     nil 'local))
       (let ((ctrlf--active-p t)
-            (cursor-in-non-selected-windows
-             ;; This conditional is needed because `cursor-type' t
-             ;; means to look up the frame parameter, but
-             ;; `cursor-in-non-selected-windows' means use a modified
-             ;; cursor type derived from `cursor-type' (which behavior
-             ;; we are explicitly trying to disable here).
-             (if (eq cursor-type t)
-                 (frame-parameter nil 'cursor-type)
-               cursor-type)))
+            (cursor-in-non-selected-windows nil))
         (read-from-minibuffer
          "Find: " nil keymap nil 'ctrlf-search-history)))))
 
