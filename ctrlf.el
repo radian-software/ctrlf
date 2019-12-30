@@ -44,7 +44,11 @@ events and the values are command symbols."
           :value-type function))
 
 (defcustom ctrlf-minibuffer-bindings
-  '(([remap abort-recursive-edit] . ctrlf-cancel))
+  '(([remap abort-recursive-edit]     . ctrlf-cancel)
+    ;; This is bound in `minibuffer-local-map' by loading `delsel', so
+    ;; we have to account for it too.
+    ([remap minibuffer-keyboard-quit] . ctrlf-cancel)
+    ([remap ctrlf-forward]            . ignore))
   "Keybindings enabled in minibuffer during search. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 entering the minibuffer. The keys are strings or raw key events
