@@ -100,6 +100,9 @@ Nil means we are searching using a literal string.")
 (defvar ctrlf--message-overlay nil
   "Overlay used to display transient message, or nil.")
 
+(defvar ctrlf--highlight-overlays nil
+  "List of active overlays used for highlighting.")
+
 (defun ctrlf--transient-message (format &rest args)
   "Display a transient message in the minibuffer.
 FORMAT and ARGS are as in `message'."
@@ -110,9 +113,6 @@ FORMAT and ARGS are as in `message'."
       (put-text-property 0 (length string) 'face 'minibuffer-prompt string)
       (put-text-property 0 1 'cursor t string)
       (overlay-put ctrlf--message-overlay 'after-string string))))
-
-(defvar ctrlf--highlight-overlays nil
-  "List of active overlays used for highlighting.")
 
 (cl-defun ctrlf--search
     (query &key
