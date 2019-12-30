@@ -61,6 +61,10 @@ inherits from `minibuffer-local-map'."
 (defvar ctrlf-search-history nil
   "History of searches that were not canceled.")
 
+(defvar ctrlf--active-p nil
+  "Non-nil means we're currently performing a search.
+This is dynamically bound by CTRLF commands.")
+
 (defvar ctrlf--backward-p nil
   "Non-nil means we are currently searching backward.
 Nil means we are currently searching forward.")
@@ -147,11 +151,15 @@ FORMAT and ARGS are as in `message'."
            'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook nil 'local)
           (add-hook 'post-command-hook #'ctrlf--minibuffer-post-command-hook
                     nil 'local))
-      (read-from-minibuffer "Find: " nil keymap nil 'ctrlf-search-history))))
+      (let ((ctrlf--active-p t))
+        (read-from-minibuffer
+         "Find: " nil keymap nil 'ctrlf-search-history)))))
 
 (defun ctrlf-forward ()
   "Search forward for literal string."
   (interactive)
+  (when ctrlf--active-p
+    (user-error "Already in the middle of a CTRLF search"))
   (setq ctrlf--backward-p nil)
   (setq ctrlf--regexp-p nil)
   (ctrlf--start))
@@ -159,6 +167,8 @@ FORMAT and ARGS are as in `message'."
 (defun ctrlf-backward ()
   "Search backward for literal string."
   (interactive)
+  (when ctrlf--active-p
+    (user-error "Already in the middle of a CTRLF search"))
   (setq ctrlf--backward-p t)
   (setq ctrlf--regexp-p nil)
   (ctrlf--start))
@@ -166,6 +176,8 @@ FORMAT and ARGS are as in `message'."
 (defun ctrlf-forward-regexp ()
   "Search forward for regexp."
   (interactive)
+  (when ctrlf--active-p
+    (user-error "Already in the middle of a CTRLF search"))
   (setq ctrlf--backward-p nil)
   (setq ctrlf--regexp-p t)
   (ctrlf--start))
@@ -173,6 +185,8 @@ FORMAT and ARGS are as in `message'."
 (defun ctrlf-backward-regexp ()
   "Search backward for regexp."
   (interactive)
+  (when ctrlf--active-p
+    (user-error "Already in the middle of a CTRLF search"))
   (setq ctrlf--backward-p t)
   (setq ctrlf--regexp-p t)
   (ctrlf--start))
