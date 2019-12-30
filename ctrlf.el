@@ -47,7 +47,9 @@ events and the values are command symbols."
   '(([remap abort-recursive-edit]     . ctrlf-cancel)
     ;; This is bound in `minibuffer-local-map' by loading `delsel', so
     ;; we have to account for it too.
-    ([remap minibuffer-keyboard-quit] . ctrlf-cancel)
+    ([remap minibuffer-keyboard-quit]       . ctrlf-cancel)
+    ([remap minibuffer-beginning-of-buffer] . ctrlf-first-match)
+    ([remap end-of-buffer]                  . ctrlf-last-match)
     ("C-s"       . ctrlf-next-match-or-previous-history-element)
     ("TAB"       . ctrlf-next-match-or-previous-history-element)
     ("C-r"       . ctrlf-previous-match-or-previous-history-element)
@@ -334,6 +336,32 @@ to previous match otherwise."
   (if (string-empty-p (field-string (point-max)))
       (previous-history-element 1)
     (ctrlf-previous-match)))
+
+(defun ctrlf-first-match ()
+  "Move to first match, if there is one."
+  (interactive)
+  (when ctrlf--match-bounds
+    (setq ctrlf--current-starting-point
+          (with-current-buffer
+              (window-buffer (minibuffer-selected-window))
+            (point-min))))
+  ;; Next search should go forward.
+  (setq ctrlf--backward-p nil)
+  ;; Force recalculation of search.
+  (setq ctrlf--last-input nil))
+
+(defun ctrlf-last-match ()
+  "Move to last match, if there is one."
+  (interactive)
+  (when ctrlf--match-bounds
+    (setq ctrlf--current-starting-point
+          (with-current-buffer
+              (window-buffer (minibuffer-selected-window))
+            (point-max))))
+  ;; Next search should go backward.
+  (setq ctrlf--backward-p t)
+  ;; Force recalculation of search.
+  (setq ctrlf--last-input nil))
 
 (defun ctrlf-cancel ()
   "Exit search, returning point to original position."
