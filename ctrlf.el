@@ -109,12 +109,19 @@ Nil means we are searching using a literal string.")
 (defvar ctrlf--match-bounds nil
   "Cons cell of current match beginning and end, or nil if no match.")
 
+(defun ctrlf--finalize ()
+  "Perform cleanup that has to happen after the minibuffer is exited."
+  (remove-hook 'post-command-hook #'ctrlf--finalize)
+  (unless (= (point) ctrlf--starting-point)
+    (push-mark ctrlf--starting-point)))
+
 (defun ctrlf--minibuffer-exit-hook ()
-  "Clean up CTRLF and self-destruct this hook."
+  "Clean up CTRLF from minibuffer and self-destruct this hook."
   (ctrlf--clear-highlight-overlays)
   (remove-hook
    'post-command-hook #'ctrlf--minibuffer-post-command-hook 'local)
-  (remove-hook 'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook 'local))
+  (remove-hook 'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook 'local)
+  (add-hook 'post-command-hook #'ctrlf--finalize))
 
 (defun ctrlf--transient-message (format &rest args)
   "Display a transient message in the minibuffer.
