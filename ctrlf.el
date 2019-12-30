@@ -134,7 +134,7 @@ mess."
     (query &key
            (regexp :unset) (backward :unset)
            (literal :unset) (forward :unset)
-           bound)
+           wraparound bound)
   "Single-buffer text search primitive. Search for QUERY.
 REGEXP controls whether to interpret QUERY literally (nil) or as
 a regexp (non-nil), else check `ctrlf--regexp-p'. BACKWARD
@@ -167,7 +167,13 @@ still move point."
                  (if regexp
                      #'re-search-forward
                    #'search-forward))))
-    (funcall func query bound 'noerror)))
+    (or (funcall func query bound 'noerror)
+        (when wraparound
+          (goto-char
+           (if backward
+               (point-max)
+             (point-min)))
+          (funcall func query bound 'noerror)))))
 
 (defun ctrlf--clear-highlight-overlays ()
   "Delete all overlays used for highlighting."
@@ -194,7 +200,7 @@ still move point."
         (with-current-buffer (window-buffer (minibuffer-selected-window))
           (let ((prev-point (point)))
             (goto-char ctrlf--current-starting-point)
-            (if (ctrlf--search input)
+            (if (ctrlf--search input :wraparound t)
                 (progn
                   (goto-char (match-beginning 0))
                   (setq ctrlf--match-bounds
