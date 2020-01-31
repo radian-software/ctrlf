@@ -24,6 +24,7 @@
 (require 'cl-lib)
 (require 'map)
 (require 'subr-x)
+(require 'thingatpt)
 
 (defgroup ctrlf nil
   "More streamlined replacement for Isearch, Swiper, etc."
@@ -457,6 +458,17 @@ direction is backwards."
   (ctrlf--clear-persistent-overlays)
   (set-window-point (minibuffer-selected-window) ctrlf--starting-point)
   (abort-recursive-edit))
+
+(defun ctrlf-insert-symbol-at-point ()
+  "Use symbol at point to replace user input."
+  (interactive)
+  (let ((symbol (with-selected-window
+                    (minibuffer-selected-window)
+                  (thing-at-point 'symbol t))))
+    (delete-minibuffer-contents)
+    (if ctrlf--regexp-p
+        (insert (concat "\\_<" symbol "\\_>"))
+      (insert symbol))))
 
 (defvar ctrlf--keymap (make-sparse-keymap)
   "Keymap for `ctrlf-mode'. Populated when mode is enabled.
