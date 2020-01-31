@@ -36,7 +36,7 @@
   :type 'boolean)
 
 (defcustom ctrlf-auto-recenter nil
-  "Whether recenter current match automatically or not."
+  "Non-nil means to always keep the current match vertically centered."
   :type 'boolean)
 
 (defcustom ctrlf-mode-bindings
