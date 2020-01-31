@@ -31,6 +31,10 @@
   :prefix "ctrlf-"
   :link '(url-link "https://github.com/raxod502/ctrlf"))
 
+(defcustom ctrlf-highlight-current-line t
+  "Whether highlight current line or not."
+  :type 'boolean)
+
 (defcustom ctrlf-mode-bindings
   '(([remap isearch-forward        ] . ctrlf-forward)
     ([remap isearch-backward       ] . ctrlf-backward)
@@ -72,6 +76,10 @@ inherits from `minibuffer-local-map'."
 (defface ctrlf-highlight-passive
   '((t :inherit lazy-highlight))
   "Face used to highlight other matches in the buffer.")
+
+(defface ctrlf-highlight-line
+  '((t :inherit highlight))
+  "Face used to highlight current line.")
 
 (defvar ctrlf-search-history nil
   "History of searches that were not canceled.")
@@ -301,7 +309,17 @@ fails, return nil, but still move point."
             (let ((ol (make-overlay
                        (car ctrlf--match-bounds) (cdr ctrlf--match-bounds))))
               (push ol ctrlf--persistent-overlays)
-              (overlay-put ol 'face 'ctrlf-highlight-active)))
+              (overlay-put ol 'face 'ctrlf-highlight-active))
+            (when ctrlf-highlight-current-line
+              (let ((ol (make-overlay
+                         (save-excursion
+                           (goto-char (car ctrlf--match-bounds))
+                           (line-beginning-position))
+                         (save-excursion
+                           (goto-char (cdr ctrlf--match-bounds))
+                           (1+ (line-end-position))))))
+                (push ol ctrlf--persistent-overlays)
+                (overlay-put ol 'face 'ctrlf-highlight-line))))
           (let ((start (window-start (minibuffer-selected-window)))
                 (end (window-end (minibuffer-selected-window))))
             (save-excursion
