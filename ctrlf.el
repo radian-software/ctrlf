@@ -35,6 +35,10 @@
   "Whether highlight current line or not."
   :type 'boolean)
 
+(defcustom ctrlf-auto-recenter nil
+  "Whether recenter current match automatically or not."
+  :type 'boolean)
+
 (defcustom ctrlf-mode-bindings
   '(([remap isearch-forward        ] . ctrlf-forward)
     ([remap isearch-backward       ] . ctrlf-backward)
@@ -55,6 +59,7 @@ events and the values are command symbols."
     ([remap minibuffer-keyboard-quit]       . ctrlf-cancel)
     ([remap minibuffer-beginning-of-buffer] . ctrlf-first-match)
     ([remap end-of-buffer]                  . ctrlf-last-match)
+    ([remap recenter]                       . ctrlf-recenter)
     ("C-s"       . ctrlf-next-match-or-previous-history-element)
     ("TAB"       . ctrlf-next-match-or-previous-history-element)
     ("C-r"       . ctrlf-previous-match-or-previous-history-element)
@@ -396,6 +401,13 @@ fails, return nil, but still move point."
   (setq ctrlf--regexp-p t)
   (ctrlf--start))
 
+(defun ctrlf-recenter ()
+  "Display current match in the center of the window."
+  (interactive)
+  (with-selected-window
+   (minibuffer-selected-window)
+   (recenter)))
+
 (defun ctrlf-next-match ()
   "Move to next match, if there is one. Wrap around if necessary."
   (interactive)
@@ -405,7 +417,9 @@ fails, return nil, but still move point."
   ;; Next search should go forward.
   (setq ctrlf--backward-p nil)
   ;; Force recalculation of search.
-  (setq ctrlf--last-input nil))
+  (setq ctrlf--last-input nil)
+  (when ctrlf-auto-recenter
+    (ctrlf-recenter)))
 
 (defun ctrlf-previous-match ()
   "Move to previous match, if there is one. Wrap around if necessary."
@@ -416,7 +430,9 @@ fails, return nil, but still move point."
   ;; Next search should go backward.
   (setq ctrlf--backward-p t)
   ;; Force recalculation of search.
-  (setq ctrlf--last-input nil))
+  (setq ctrlf--last-input nil)
+  (when ctrlf-auto-recenter
+    (ctrlf-recenter)))
 
 (defun ctrlf-next-match-or-previous-history-element ()
   "Move to next match or re-start last search.
@@ -453,7 +469,9 @@ direction is backwards."
   ;; Next search should go forward.
   (setq ctrlf--backward-p nil)
   ;; Force recalculation of search.
-  (setq ctrlf--last-input nil))
+  (setq ctrlf--last-input nil)
+  (when ctrlf-auto-recenter
+    (ctrlf-recenter)))
 
 (defun ctrlf-last-match ()
   "Move to last match, if there is one."
@@ -466,7 +484,9 @@ direction is backwards."
   ;; Next search should go backward.
   (setq ctrlf--backward-p t)
   ;; Force recalculation of search.
-  (setq ctrlf--last-input nil))
+  (setq ctrlf--last-input nil)
+  (when ctrlf-auto-recenter
+    (ctrlf-recenter)))
 
 (defun ctrlf-cancel ()
   "Exit search, returning point to original position."
