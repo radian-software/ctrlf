@@ -57,7 +57,10 @@ events and the values are command symbols."
     ;; This is bound in `minibuffer-local-map' by loading `delsel', so
     ;; we have to account for it too.
     ([remap minibuffer-keyboard-quit]       . ctrlf-cancel)
+    ;; Use `minibuffer-beginning-of-buffer' for Emacs >=27 and
+    ;; `beginning-of-buffer' for Emacs <=26.
     ([remap minibuffer-beginning-of-buffer] . ctrlf-first-match)
+    ([remap beginning-of-buffer]            . ctrlf-first-match)
     ([remap end-of-buffer]                  . ctrlf-last-match)
     ([remap recenter]                       . ctrlf-recenter)
     ("C-s"       . ctrlf-next-match-or-previous-history-element)
