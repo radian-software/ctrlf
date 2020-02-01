@@ -35,6 +35,10 @@
   "Whether highlight current line or not."
   :type 'boolean)
 
+(defcustom ctrlf-auto-recenter nil
+  "Non-nil means to always keep the current match vertically centered."
+  :type 'boolean)
+
 (defcustom ctrlf-mode-bindings
   '(([remap isearch-forward        ] . ctrlf-forward)
     ([remap isearch-backward       ] . ctrlf-backward)
@@ -55,6 +59,7 @@ events and the values are command symbols."
     ([remap minibuffer-keyboard-quit]       . ctrlf-cancel)
     ([remap minibuffer-beginning-of-buffer] . ctrlf-first-match)
     ([remap end-of-buffer]                  . ctrlf-last-match)
+    ([remap recenter]                       . ctrlf-recenter)
     ("C-s"       . ctrlf-next-match-or-previous-history-element)
     ("TAB"       . ctrlf-next-match-or-previous-history-element)
     ("C-r"       . ctrlf-previous-match-or-previous-history-element)
@@ -287,6 +292,8 @@ fails, return nil, but still move point."
           ;; that all the overlay modifications happen between
           ;; redisplays. Otherwise the user can see a partial set of
           ;; overlays for a split second.
+          (when ctrlf-auto-recenter
+            (ctrlf-recenter))
           (redisplay)
           (ctrlf--clear-persistent-overlays)
           (when ctrlf--match-bounds
@@ -395,6 +402,13 @@ fails, return nil, but still move point."
   (setq ctrlf--backward-p t)
   (setq ctrlf--regexp-p t)
   (ctrlf--start))
+
+(defun ctrlf-recenter ()
+  "Display current match in the center of the window."
+  (interactive)
+  (with-selected-window
+      (minibuffer-selected-window)
+    (recenter)))
 
 (defun ctrlf-next-match ()
   "Move to next match, if there is one. Wrap around if necessary."
