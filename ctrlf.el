@@ -40,6 +40,19 @@
   "Non-nil means to always keep the current match vertically centered."
   :type 'boolean)
 
+(defcustom ctrlf-style-alist
+  '((literal      . (:prompt "literal"  :translator regexp-quote))
+    (regexp       . (:prompt "regexp"   :translator identity))
+    (fuzzy        . (:prompt "fuzzy"    :translator ctrlf--fuzzy-translate))
+    (fuzzy-regexp . (:prompt "fuzzy re"
+                             :translator ctrlf--fuzzy-regexp-translate)))
+  "The displayed name and regexp translator for CTRLF search styles.
+The key is the symbol of the search style, the value is a list composed of the
+displayed name and the regexp translator."
+  :type '(alist
+          :key-type symbol
+          :value-type (list string function)))
+
 (defcustom ctrlf-mode-bindings
   '(([remap isearch-forward        ] . ctrlf-forward)
     ([remap isearch-backward       ] . ctrlf-backward)
@@ -101,9 +114,8 @@ This is dynamically bound by CTRLF commands.")
   "Non-nil means we are currently searching backward.
 Nil means we are currently searching forward.")
 
-(defvar ctrlf--regexp-p nil
-  "Non-nil means we are searching using a regexp.
-Nil means we are searching using a literal string.")
+(defvar ctrlf--style nil
+  "Current search style.")
 
 (defvar ctrlf--last-input nil
   "Previous user input, or nil if none yet.")
@@ -137,6 +149,64 @@ I have literally no idea why this is needed.")
   "Return a copy of S1 with properties from S2 added.
 Assume that S2 has the same properties throughout."
   (apply #'propertize s1 (text-properties-at 0 s2)))
+
+ (defun ctrlf--fuzzy-split (str)
+  "Split STR into a list of substrs.
+STR is splitted by spaces. A single space is substituted by \".*\", while N
+consecutive spaces are substituted by N-1 spaces."
+  (let* ((last-is-empty t)
+         ;; By `split-string', N spaces will become N-1 empty strings, but at
+         ;; the beginning/end of the string, they become N empty strings. We'll
+         ;; deal with this later.
+         (splits (split-string str " "))
+         (substrs nil))
+    (dolist (split splits)
+      (cond
+       ((string-empty-p split)
+        (setq last-is-empty t)
+        (push " " substrs))
+       (t
+        (if last-is-empty
+            (push split substrs)
+          (push ".*" substrs)
+          (push split substrs))
+        (setq last-is-empty nil))))
+    ;; When there's only one space at the beginning of `substrs', this means a
+    ;; ".*". It's not pushed into `substrs' since there's nothing more comes
+    ;; from `splits' to let that happen. So we substitute it with ".*". When
+    ;; there are more than one spaces, we should remove one due to the
+    ;; `split-string' problem mentioned above.
+    (when (string= (car substrs) " ")
+      (if (string= (nth 1 substrs) " ")
+          (pop substrs)
+        (setcar substrs ".*")))
+    (setq substrs (nreverse substrs))
+    ;; We should also do the same thing to the other end of `substrs'.
+    (when (string= (car substrs) " ")
+      (if (string= (nth 1 substrs) " ")
+          (pop substrs)
+        (setcar substrs ".*")))
+    substrs))
+
+(defun ctrlf--fuzzy-translate (str)
+  "Translate the literal input STR to a fuzzy regexp.
+A single space character is translated into \".*\", while N spaces (N >= 2) are
+translated in to N-1 spaces. The groups divided by \".*\" are quotted."
+  (let ((substr-replace
+         (lambda (substr)
+           (if (string= ".*" substr)
+               substr
+             (regexp-quote substr)))))
+    (apply #'concat
+           (cl-map 'list
+                   substr-replace
+                   (ctrlf--fuzzy-split str)))))
+
+(defun ctrlf--fuzzy-regexp-translate (str)
+  "Translate the user inputted regexp STR to a fuzzy regexp.
+A single space character is translated into \".*\", while N spaces (N >= 2) are
+translated in to N-1 spaces."
+  (apply #'concat (ctrlf--fuzzy-split str)))
 
 (defun ctrlf--finalize ()
   "Perform cleanup that has to happen after the minibuffer is exited."
@@ -183,29 +253,34 @@ mess."
 
 (cl-defun ctrlf--search
     (query &key
-           (regexp :unset) (backward :unset)
-           (literal :unset) (forward :unset)
+           (translator :unset) (style :unset)
+           (backward :unset) (forward :unset)
            wraparound bound)
   "Single-buffer text search primitive. Search for QUERY.
-REGEXP controls whether to interpret QUERY literally (nil) or as
-a regexp (non-nil), else check `ctrlf--regexp-p'. BACKWARD
-controls whether to do a forward search (nil) or a backward
-search (non-nil), else check `ctrlf--backward-p'. LITERAL and
-FORWARD do the same but the meaning of their arguments are
-inverted. WRAPAROUND means keep searching at the beginning (or
-end, respectively) of the buffer, rather than stopping. BOUND, if
-non-nil, is a limit for the search as in `search-forward' and
-friend. Providing BOUND automatically disables WRAPAROUND. If the
-search succeeds, move point to the end (for forward searches) or
-beginning (for backward searches) of the match. If the search
-fails, return nil, but still move point."
-  (let* ((regexp (cond
-                  ((not (eq regexp :unset))
-                   regexp)
-                  ((not (eq literal :unset))
-                   (not literal))
-                  (t
-                   ctrlf--regexp-p)))
+TRANSLATOR specifies the function to translate user input to regexp. If it's
+unset, decide based on STYLE and `ctrlf-style-alist'. STYLE controls the search
+style. It's not needed if TRANSLATOR is specified. If both STYLE and TRANSLATOR
+are unset, they are automatically set based on `ctrlf--style'. BACKWARD
+controls whether to do a forward search (nil) or a backward search (non-nil),
+else check `ctrlf--backward-p'. LITERAL and FORWARD do the same but the meaning
+of their arguments are inverted. WRAPAROUND means keep searching at the
+beginning (or end, respectively) of the buffer, rather than stopping. BOUND, if
+non-nil, is a limit for the search as in `search-forward' and friend. Providing
+BOUND automatically disables WRAPAROUND. If the search succeeds, move point to
+the end (for forward searches) or beginning (for backward searches) of the
+match. If the search fails, return nil, but still move point."
+  (let* ((style (when (eq translator :unset)
+                  (cond
+                   ((not (eq style :unset))
+                    style)
+                   (t
+                    ctrlf--style))))
+         (translator (cond
+                      ((not (eq translator :unset))
+                       translator)
+                      (t
+                       (plist-get
+                        (alist-get style ctrlf-style-alist) :translator))))
          (backward (cond
                     ((not (eq backward :unset))
                      backward)
@@ -215,12 +290,9 @@ fails, return nil, but still move point."
                      ctrlf--backward-p)))
          (wraparound (and wraparound (not bound)))
          (func (if backward
-                   (if regexp
-                       #'re-search-backward
-                     #'search-backward)
-                 (if regexp
-                     #'re-search-forward
-                   #'search-forward))))
+                   #'re-search-backward
+                 #'re-search-forward))
+         (query (funcall translator query)))
     (or (funcall func query bound 'noerror)
         (when wraparound
           (goto-char
@@ -235,7 +307,7 @@ fails, return nil, but still move point."
    "CTRLF "
    (if ctrlf--backward-p "↑" "↓")
    " "
-   (if ctrlf--regexp-p "regexp" "literal")
+   (plist-get (alist-get ctrlf--style ctrlf-style-alist) :prompt)
    ": "))
 
 (defun ctrlf--clear-transient-overlays ()
@@ -262,19 +334,15 @@ fails, return nil, but still move point."
   (ctrlf--clear-transient-overlays)
   (cl-block nil
     (let ((input (field-string (point-max))))
-      (if ctrlf--regexp-p
-          (condition-case e
-              (when (string-match-p input "")
-                ;; Let's just rule out zero-length matches entirely,
-                ;; they're not interesting and they make the
-                ;; implementation more complicated and slower.
-                (cl-return))
-            (invalid-regexp
-             (ctrlf--message "Invalid regexp: %s" (cadr e))
-             (cl-return)))
-        ;; Also exclude zero-length matches for literal searches.
-        (when (string-empty-p input)
-          (cl-return)))
+      (condition-case e
+          (when (string-match-p input "")
+            ;; Let's just rule out zero-length matches entirely,
+            ;; they're not interesting and they make the
+            ;; implementation more complicated and slower.
+            (cl-return))
+        (invalid-regexp
+         (ctrlf--message "Invalid regexp: %s" (cadr e))
+         (cl-return)))
       (unless (equal input ctrlf--last-input)
         (setq ctrlf--last-input input)
         (with-current-buffer (window-buffer (minibuffer-selected-window))
@@ -378,7 +446,7 @@ fails, return nil, but still move point."
   (when ctrlf--active-p
     (user-error "Already in the middle of a CTRLF search"))
   (setq ctrlf--backward-p nil)
-  (setq ctrlf--regexp-p nil)
+  (setq ctrlf--style 'literal)
   (ctrlf--start))
 
 (defun ctrlf-backward ()
@@ -387,7 +455,7 @@ fails, return nil, but still move point."
   (when ctrlf--active-p
     (user-error "Already in the middle of a CTRLF search"))
   (setq ctrlf--backward-p t)
-  (setq ctrlf--regexp-p nil)
+  (setq ctrlf--style 'literal)
   (ctrlf--start))
 
 (defun ctrlf-forward-regexp ()
@@ -396,7 +464,7 @@ fails, return nil, but still move point."
   (when ctrlf--active-p
     (user-error "Already in the middle of a CTRLF search"))
   (setq ctrlf--backward-p nil)
-  (setq ctrlf--regexp-p t)
+  (setq ctrlf--style 'regexp)
   (ctrlf--start))
 
 (defun ctrlf-backward-regexp ()
@@ -405,7 +473,43 @@ fails, return nil, but still move point."
   (when ctrlf--active-p
     (user-error "Already in the middle of a CTRLF search"))
   (setq ctrlf--backward-p t)
-  (setq ctrlf--regexp-p t)
+  (setq ctrlf--style 'regexp)
+  (ctrlf--start))
+
+(defun ctrlf-forward-fuzzy ()
+  "Search forward for literal string in the fuzzy style."
+  (interactive)
+  (when ctrlf--active-p
+    (user-error "Already in the middle of a CTRLF search"))
+  (setq ctrlf--backward-p nil)
+  (setq ctrlf--style 'fuzzy)
+  (ctrlf--start))
+
+(defun ctrlf-backward-fuzzy ()
+  "Search backward for literal string in the fuzzy style."
+  (interactive)
+  (when ctrlf--active-p
+    (user-error "Already in the middle of a CTRLF search"))
+  (setq ctrlf--backward-p t)
+  (setq ctrlf--style 'fuzzy)
+  (ctrlf--start))
+
+(defun ctrlf-forward-fuzzy-regexp ()
+  "Search forward for regexp in the fuzzy-regexp style."
+  (interactive)
+  (when ctrlf--active-p
+    (user-error "Already in the middle of a CTRLF search"))
+  (setq ctrlf--backward-p nil)
+  (setq ctrlf--style 'fuzzy-regexp)
+  (ctrlf--start))
+
+(defun ctrlf-backward-fuzzy-regexp ()
+  "Search backward for regexp in the fuzzy-regexp style."
+  (interactive)
+  (when ctrlf--active-p
+    (user-error "Already in the middle of a CTRLF search"))
+  (setq ctrlf--backward-p t)
+  (setq ctrlf--style 'fuzzy-regexp)
   (ctrlf--start))
 
 (defun ctrlf-recenter ()
@@ -467,7 +571,7 @@ When doing regexp search, wrap it with \"\\_<\" and \"\\_>\". When there's no
 symbol at point, return nil."
   (let ((symbol (thing-at-point 'symbol t)))
     (when symbol
-      (if ctrlf--regexp-p
+      (if (memq ctrlf--style '(regexp fuzzy-regexp))
           (concat "\\_<" (regexp-quote symbol) "\\_>")
         symbol))))
 
