@@ -407,8 +407,8 @@ fails, return nil, but still move point."
   "Display current match in the center of the window."
   (interactive)
   (with-selected-window
-   (minibuffer-selected-window)
-   (recenter)))
+      (minibuffer-selected-window)
+    (recenter)))
 
 (defun ctrlf-next-match ()
   "Move to next match, if there is one. Wrap around if necessary."
