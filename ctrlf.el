@@ -52,6 +52,8 @@ events and the values are command symbols."
     ([remap minibuffer-keyboard-quit]       . ctrlf-cancel)
     ([remap minibuffer-beginning-of-buffer] . ctrlf-first-match)
     ([remap end-of-buffer]                  . ctrlf-last-match)
+    ([remap next-history-element]
+     . ctrlf-next-history-element-or-symbol-at-point)
     ("C-s"       . ctrlf-next-match-or-previous-history-element)
     ("TAB"       . ctrlf-next-match-or-previous-history-element)
     ("C-r"       . ctrlf-previous-match-or-previous-history-element)
@@ -425,6 +427,26 @@ direction is backwards."
         (previous-history-element 1))
     (ctrlf-previous-match)))
 
+(defun ctrlf-insert-symbol-at-point ()
+  "Use symbol at point to replace user input."
+  (interactive)
+  (let ((symbol (with-selected-window
+                    (minibuffer-selected-window)
+                  (thing-at-point 'symbol t))))
+    (delete-minibuffer-contents)
+    (if ctrlf--regexp-p
+        (insert (concat "\\_<" (regexp-quote symbol) "\\_>"))
+      (insert symbol))))
+
+(defun ctrlf-next-history-element-or-symbol-at-point (n)
+  "Use next history element to replace user input.
+With argument N, it uses the Nth following element. When runing out of history,
+the symbol at point is used."
+  (interactive "p")
+  (if (< (- minibuffer-history-position n) 0)
+      (ctrlf-insert-symbol-at-point)
+    (next-history-element n)))
+
 (defun ctrlf-first-match ()
   "Move to first match, if there is one."
   (interactive)
@@ -458,17 +480,6 @@ direction is backwards."
   (ctrlf--clear-persistent-overlays)
   (set-window-point (minibuffer-selected-window) ctrlf--starting-point)
   (abort-recursive-edit))
-
-(defun ctrlf-insert-symbol-at-point ()
-  "Use symbol at point to replace user input."
-  (interactive)
-  (let ((symbol (with-selected-window
-                    (minibuffer-selected-window)
-                  (thing-at-point 'symbol t))))
-    (delete-minibuffer-contents)
-    (if ctrlf--regexp-p
-        (insert (concat "\\_<" symbol "\\_>"))
-      (insert symbol))))
 
 (defvar ctrlf--keymap (make-sparse-keymap)
   "Keymap for `ctrlf-mode'. Populated when mode is enabled.
