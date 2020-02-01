@@ -292,6 +292,8 @@ fails, return nil, but still move point."
           ;; that all the overlay modifications happen between
           ;; redisplays. Otherwise the user can see a partial set of
           ;; overlays for a split second.
+          (when ctrlf-auto-recenter
+            (ctrlf-recenter))
           (redisplay)
           (ctrlf--clear-persistent-overlays)
           (when ctrlf--match-bounds
@@ -417,9 +419,7 @@ fails, return nil, but still move point."
   ;; Next search should go forward.
   (setq ctrlf--backward-p nil)
   ;; Force recalculation of search.
-  (setq ctrlf--last-input nil)
-  (when ctrlf-auto-recenter
-    (ctrlf-recenter)))
+  (setq ctrlf--last-input nil))
 
 (defun ctrlf-previous-match ()
   "Move to previous match, if there is one. Wrap around if necessary."
@@ -430,9 +430,7 @@ fails, return nil, but still move point."
   ;; Next search should go backward.
   (setq ctrlf--backward-p t)
   ;; Force recalculation of search.
-  (setq ctrlf--last-input nil)
-  (when ctrlf-auto-recenter
-    (ctrlf-recenter)))
+  (setq ctrlf--last-input nil))
 
 (defun ctrlf-next-match-or-previous-history-element ()
   "Move to next match or re-start last search.
@@ -469,9 +467,7 @@ direction is backwards."
   ;; Next search should go forward.
   (setq ctrlf--backward-p nil)
   ;; Force recalculation of search.
-  (setq ctrlf--last-input nil)
-  (when ctrlf-auto-recenter
-    (ctrlf-recenter)))
+  (setq ctrlf--last-input nil))
 
 (defun ctrlf-last-match ()
   "Move to last match, if there is one."
@@ -484,9 +480,7 @@ direction is backwards."
   ;; Next search should go backward.
   (setq ctrlf--backward-p t)
   ;; Force recalculation of search.
-  (setq ctrlf--last-input nil)
-  (when ctrlf-auto-recenter
-    (ctrlf-recenter)))
+  (setq ctrlf--last-input nil))
 
 (defun ctrlf-cancel ()
   "Exit search, returning point to original position."
