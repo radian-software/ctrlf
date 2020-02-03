@@ -428,11 +428,13 @@ direction is backwards."
 
 (defun ctrlf--symbol-at-point ()
   "Return symbol at point.
-When doing regexp search, wrap it with \"\\_<\" and \"\\_>\"."
+When doing regexp search, wrap it with \"\\_<\" and \"\\_>\". When there's no
+symbol at point, return nil."
   (let ((symbol (thing-at-point 'symbol t)))
-    (if ctrlf--regexp-p
-        (concat "\\_<" (regexp-quote symbol) "\\_>")
-      symbol)))
+    (when symbol
+      (if ctrlf--regexp-p
+          (concat "\\_<" (regexp-quote symbol) "\\_>")
+        symbol))))
 
 (defun ctrlf-first-match ()
   "Move to first match, if there is one."
