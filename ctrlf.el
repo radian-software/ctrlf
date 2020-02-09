@@ -24,6 +24,7 @@
 (require 'cl-lib)
 (require 'map)
 (require 'subr-x)
+(require 'thingatpt)
 
 (defgroup ctrlf nil
   "More streamlined replacement for Isearch, Swiper, etc."
@@ -368,7 +369,8 @@ fails, return nil, but still move point."
       (let ((ctrlf--active-p t)
             (cursor-in-non-selected-windows nil))
         (read-from-minibuffer
-         (ctrlf--prompt) nil keymap nil 'ctrlf-search-history)))))
+         (ctrlf--prompt) nil keymap nil 'ctrlf-search-history
+         (ctrlf--symbol-at-point))))))
 
 (defun ctrlf-forward ()
   "Search forward for literal string."
@@ -458,6 +460,16 @@ direction is backwards."
         (setq ctrlf--backward-p t)
         (previous-history-element 1))
     (ctrlf-previous-match)))
+
+(defun ctrlf--symbol-at-point ()
+  "Return symbol at point.
+When doing regexp search, wrap it with \"\\_<\" and \"\\_>\". When there's no
+symbol at point, return nil."
+  (let ((symbol (thing-at-point 'symbol t)))
+    (when symbol
+      (if ctrlf--regexp-p
+          (concat "\\_<" (regexp-quote symbol) "\\_>")
+        symbol))))
 
 (defun ctrlf-first-match ()
   "Move to first match, if there is one."
