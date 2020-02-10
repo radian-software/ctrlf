@@ -333,9 +333,13 @@ match. If the search fails, return nil, but still move point."
     (goto-char (field-end (point-min))))
   (ctrlf--clear-transient-overlays)
   (cl-block nil
-    (let ((input (field-string (point-max))))
+    (let* ((input (field-string (point-max)))
+           (translator (plist-get
+                        (alist-get ctrlf--style ctrlf-style-alist)
+                        :translator))
+           (regexp (funcall translator input)))
       (condition-case e
-          (when (string-match-p input "")
+          (when (string-match-p regexp "")
             ;; Let's just rule out zero-length matches entirely,
             ;; they're not interesting and they make the
             ;; implementation more complicated and slower.
