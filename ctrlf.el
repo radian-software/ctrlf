@@ -51,7 +51,8 @@ The key is the symbol of the search style, the value is a list composed of the
 displayed name and the regexp translator."
   :type '(alist
           :key-type symbol
-          :value-type (list string function)))
+          :value-type (list (const :prompt) string
+                            (const :translator) function)))
 
 (defcustom ctrlf-mode-bindings
   '(([remap isearch-forward        ] . ctrlf-forward)
@@ -150,7 +151,7 @@ I have literally no idea why this is needed.")
 Assume that S2 has the same properties throughout."
   (apply #'propertize s1 (text-properties-at 0 s2)))
 
- (defun ctrlf--fuzzy-split (str)
+(defun ctrlf--fuzzy-split (str)
   "Split STR into a list of substrs.
 STR is splitted by spaces. A single space is substituted by \".*\", while N
 consecutive spaces are substituted by N-1 spaces."
@@ -442,7 +443,7 @@ match. If the search fails, return nil, but still move point."
             (cursor-in-non-selected-windows nil))
         (read-from-minibuffer
          (ctrlf--prompt) nil keymap nil 'ctrlf-search-history
-         (ctrlf--symbol-at-point))))))
+         (thing-at-point 'symbol t))))))
 
 (defun ctrlf-forward ()
   "Search forward for literal string."
@@ -568,16 +569,6 @@ direction is backwards."
         (setq ctrlf--backward-p t)
         (previous-history-element 1))
     (ctrlf-previous-match)))
-
-(defun ctrlf--symbol-at-point ()
-  "Return symbol at point.
-When doing regexp search, wrap it with \"\\_<\" and \"\\_>\". When there's no
-symbol at point, return nil."
-  (let ((symbol (thing-at-point 'symbol t)))
-    (when symbol
-      (if (memq ctrlf--style '(regexp fuzzy-regexp))
-          (concat "\\_<" (regexp-quote symbol) "\\_>")
-        symbol))))
 
 (defun ctrlf-first-match ()
   "Move to first match, if there is one."
