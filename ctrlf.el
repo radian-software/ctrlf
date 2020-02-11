@@ -254,34 +254,24 @@ mess."
 
 (cl-defun ctrlf--search
     (query &key
-           (translator :unset) (style :unset)
-           (backward :unset) (forward :unset)
+           (style :unset) (backward :unset) (forward :unset)
            wraparound bound)
   "Single-buffer text search primitive. Search for QUERY.
-TRANSLATOR specifies the function to translate user input to regexp. If it's
-unset, decide based on STYLE and `ctrlf-style-alist'. STYLE controls the search
-style. It's not needed if TRANSLATOR is specified. If both STYLE and TRANSLATOR
-are unset, they are automatically set based on `ctrlf--style'. BACKWARD
-controls whether to do a forward search (nil) or a backward search (non-nil),
-else check `ctrlf--backward-p'. LITERAL and FORWARD do the same but the meaning
-of their arguments are inverted. WRAPAROUND means keep searching at the
-beginning (or end, respectively) of the buffer, rather than stopping. BOUND, if
-non-nil, is a limit for the search as in `search-forward' and friend. Providing
-BOUND automatically disables WRAPAROUND. If the search succeeds, move point to
-the end (for forward searches) or beginning (for backward searches) of the
-match. If the search fails, return nil, but still move point."
-  (let* ((style (when (eq translator :unset)
-                  (cond
-                   ((not (eq style :unset))
-                    style)
-                   (t
-                    ctrlf--style))))
-         (translator (cond
-                      ((not (eq translator :unset))
-                       translator)
-                      (t
-                       (plist-get
-                        (alist-get style ctrlf-style-alist) :translator))))
+STYLE controls the search style. If it's unset, use the value of
+`ctrlf--style'. BACKWARD controls whether to do a forward search (nil) or a
+backward search (non-nil), else check `ctrlf--backward-p'. LITERAL and FORWARD
+do the same but the meaning of their arguments are inverted. WRAPAROUND means
+keep searching at the beginning (or end, respectively) of the buffer, rather
+than stopping. BOUND, if non-nil, is a limit for the search as in
+`search-forward' and friend. Providing BOUND automatically disables
+WRAPAROUND. If the search succeeds, move point to the end (for forward
+searches) or beginning (for backward searches) of the match. If the search
+fails, return nil, but still move point."
+  (let* ((style (cond
+                 ((not (eq style :unset))
+                  style)
+                 (t
+                  ctrlf--style)))
          (backward (cond
                     ((not (eq backward :unset))
                      backward)
@@ -293,7 +283,9 @@ match. If the search fails, return nil, but still move point."
          (func (if backward
                    #'re-search-backward
                  #'re-search-forward))
-         (query (funcall translator query)))
+         (query (funcall
+                 (plist-get (alist-get style ctrlf-style-alist) :translator)
+                 query)))
     (or (funcall func query bound 'noerror)
         (when wraparound
           (goto-char
