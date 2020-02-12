@@ -153,8 +153,9 @@ Assume that S2 has the same properties throughout."
 
 (defun ctrlf--fuzzy-split (str)
   "Split STR into a list of substrs.
-STR is splitted by spaces. A single space is substituted by \".*\", while N
-consecutive spaces are substituted by N-1 spaces."
+STR is splitted by spaces. A single space is substituted by
+\".*\", while N consecutive spaces are substituted by N-1
+spaces."
   (let* ((last-is-empty t)
          ;; By `split-string', N spaces will become N-1 empty strings, but at
          ;; the beginning/end of the string, they become N empty strings. We'll
@@ -191,8 +192,9 @@ consecutive spaces are substituted by N-1 spaces."
 
 (defun ctrlf--fuzzy-translate (str)
   "Translate the literal input STR to a fuzzy regexp.
-A single space character is translated into \".*\", while N spaces (N >= 2) are
-translated in to N-1 spaces. The groups divided by \".*\" are quotted."
+A single space character is translated into \".*\", while N
+spaces (N >= 2) are translated in to N-1 spaces. The groups
+divided by \".*\" are quoted."
   (let ((substr-replace
          (lambda (substr)
            (if (string= ".*" substr)
@@ -205,8 +207,8 @@ translated in to N-1 spaces. The groups divided by \".*\" are quotted."
 
 (defun ctrlf--fuzzy-regexp-translate (str)
   "Translate the user inputted regexp STR to a fuzzy regexp.
-A single space character is translated into \".*\", while N spaces (N >= 2) are
-translated in to N-1 spaces."
+A single space character is translated into \".*\", while N
+spaces (N >= 2) are translated in to N-1 spaces."
   (apply #'concat (ctrlf--fuzzy-split str)))
 
 (defun ctrlf--finalize ()
@@ -258,15 +260,17 @@ mess."
            wraparound bound)
   "Single-buffer text search primitive. Search for QUERY.
 STYLE controls the search style. If it's unset, use the value of
-`ctrlf--style'. BACKWARD controls whether to do a forward search (nil) or a
-backward search (non-nil), else check `ctrlf--backward-p'. LITERAL and FORWARD
-do the same but the meaning of their arguments are inverted. WRAPAROUND means
-keep searching at the beginning (or end, respectively) of the buffer, rather
-than stopping. BOUND, if non-nil, is a limit for the search as in
-`search-forward' and friend. Providing BOUND automatically disables
-WRAPAROUND. If the search succeeds, move point to the end (for forward
-searches) or beginning (for backward searches) of the match. If the search
-fails, return nil, but still move point."
+`ctrlf--style'. BACKWARD controls whether to do a forward
+search (nil) or a backward search (non-nil), else check
+`ctrlf--backward-p'. LITERAL and FORWARD do the same but the
+meaning of their arguments are inverted. WRAPAROUND means keep
+searching at the beginning (or end, respectively) of the buffer,
+rather than stopping. BOUND, if non-nil, is a limit for the
+search as in `search-forward' and friend. Providing BOUND
+automatically disables WRAPAROUND. If the search succeeds, move
+point to the end (for forward searches) or beginning (for
+backward searches) of the match. If the search fails, return nil,
+but still move point."
   (let* ((style (cond
                  ((not (eq style :unset))
                   style)
