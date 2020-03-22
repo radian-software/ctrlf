@@ -230,6 +230,8 @@ spaces (N >= 2) are translated in to N-1 spaces."
   (ctrlf--clear-persistent-overlays)
   (remove-hook
    'post-command-hook #'ctrlf--minibuffer-post-command-hook 'local)
+  (remove-hook
+   'before-change-functions #'ctrlf--minibuffer-before-change-function 'local)
   (remove-hook 'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook 'local)
   (add-hook 'post-command-hook #'ctrlf--finalize))
 
@@ -324,6 +326,12 @@ non-nil."
   "Delete the persistent overlays created by CTRLF."
   (while ctrlf--persistent-overlays
     (delete-overlay (pop ctrlf--persistent-overlays))))
+
+(defun ctrlf--minibuffer-before-change-function (&rest _)
+  "Prepare for user input."
+  ;; Clear overlays pre-emptively. See
+  ;; <https://github.com/raxod502/ctrlf/issues/1>.
+  (ctrlf--clear-transient-overlays))
 
 (defun ctrlf--minibuffer-post-command-hook ()
   "Deal with updated user input."
@@ -477,6 +485,9 @@ non-nil."
           (add-hook
            'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook nil 'local)
           (add-hook 'post-command-hook #'ctrlf--minibuffer-post-command-hook
+                    nil 'local)
+          (add-hook 'before-change-functions
+                    #'ctrlf--minibuffer-before-change-function
                     nil 'local))
       (let ((ctrlf--active-p t)
             (cursor-in-non-selected-windows nil))
