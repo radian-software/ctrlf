@@ -77,7 +77,7 @@ events and the values are command symbols."
     ([remap minibuffer-beginning-of-buffer] . ctrlf-first-match)
     ([remap beginning-of-buffer]            . ctrlf-first-match)
     ([remap end-of-buffer]                  . ctrlf-last-match)
-    ([remap recenter]                       . ctrlf-recenter)
+    ([remap recenter-top-bottom]            . ctrlf-recenter-top-bottom)
     ("TAB"       . ctrlf-next-match)
     ("S-TAB"     . ctrlf-previous-match)
     ("<backtab>" . ctrlf-previous-match))
@@ -416,6 +416,10 @@ non-nil."
               (goto-char prev-point)
               (setq ctrlf--match-bounds nil)))
           (set-window-point (minibuffer-selected-window) (point))
+          (when ctrlf-auto-recenter
+            (with-selected-window
+                (minibuffer-selected-window)
+              (recenter)))
           ;; Force redisplay to make sure the window bounds are
           ;; computed correctly, which we need to determine which
           ;; parts of the buffer to passively highlight. But make sure
@@ -423,8 +427,6 @@ non-nil."
           ;; that all the overlay modifications happen between
           ;; redisplays. Otherwise the user can see a partial set of
           ;; overlays for a split second.
-          (when ctrlf-auto-recenter
-            (ctrlf-recenter))
           (redisplay)
           (ctrlf--clear-persistent-overlays)
           (when ctrlf--match-bounds
@@ -708,12 +710,14 @@ search, change back to fuzzy-regexp search."
   (redisplay)
   (abort-recursive-edit))
 
-(defun ctrlf-recenter ()
-  "Display current match in the center of the window."
+(defun ctrlf-recenter-top-bottom ()
+  "Display current match in the center of the window (by default).
+Successive calls, or calls with prefix argument, may have
+different behavior, for which see `recenter-top-bottom'."
   (interactive)
   (with-selected-window
       (minibuffer-selected-window)
-    (recenter)))
+    (recenter-top-bottom)))
 
 (defvar ctrlf--keymap (make-sparse-keymap)
   "Keymap for `ctrlf-mode'. Populated when mode is enabled.
