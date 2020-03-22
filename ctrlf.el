@@ -92,6 +92,11 @@ inherits from `minibuffer-local-map'."
           :key-type sexp
           :value-type function))
 
+(defcustom ctrlf-zero-length-match-width 0.2
+  "Width of vertical bar to display for a zero-length match.
+This is relative to the normal width of a character."
+  :type 'number)
+
 (defface ctrlf-highlight-active
   '((t :inherit isearch))
   "Face used to highlight current match.")
@@ -387,22 +392,37 @@ non-nil."
               (save-excursion
                 (goto-char (point-min))
                 (cl-block nil
-                  (while (let ((orig-point (point)))
-                           (prog1 (ctrlf--search input :forward t)
-                             (when (= (point) orig-point)
-                               (condition-case _
-                                   (forward-char)
-                                 (end-of-buffer (cl-return))))))
+                  (while (prog1 (ctrlf--search input :forward t)
+                           (when (= (match-beginning 0) (match-end 0))
+                             (condition-case _
+                                 (forward-char)
+                               (end-of-buffer (cl-return)))))
                     (when (and (> (match-end 0) start)
                                (< (match-beginning 0) end)
                                (or (<= (match-end 0)
                                        (car ctrlf--match-bounds))
                                    (>= (match-beginning 0)
-                                       (cdr ctrlf--match-bounds))))
+                                       (cdr ctrlf--match-bounds)))
+                               ;; You might think we could get away
+                               ;; without this, since overlaying the
+                               ;; active face below would just
+                               ;; overwrite the assignment here. But
+                               ;; that doesn't work for zero-length
+                               ;; matches.
+                               (/= (match-beginning 0)
+                                   (car ctrlf--match-bounds)))
                       (let ((ol (make-overlay
                                  (match-beginning 0) (match-end 0))))
                         (push ol ctrlf--persistent-overlays)
-                        (overlay-put ol 'face 'ctrlf-highlight-passive)))
+                        (if (/= (match-beginning 0) (match-end 0))
+                            (overlay-put ol 'face 'ctrlf-highlight-passive)
+                          (overlay-put
+                           ol 'after-string
+                           (propertize
+                            " "
+                            'display
+                            `(space :width ,ctrlf-zero-length-match-width)
+                            'face 'ctrlf-highlight-passive)))))
                     (cl-incf num-matches)
                     (when (and (null cur-index)
                                (>= (point) cur-point))
@@ -418,7 +438,15 @@ non-nil."
               (let ((ol (make-overlay
                          (car ctrlf--match-bounds) (cdr ctrlf--match-bounds))))
                 (push ol ctrlf--persistent-overlays)
-                (overlay-put ol 'face 'ctrlf-highlight-active))
+                (if (/= (car ctrlf--match-bounds) (cdr ctrlf--match-bounds))
+                    (overlay-put ol 'face 'ctrlf-highlight-active)
+                  (overlay-put
+                   ol 'after-string
+                   (propertize
+                    " "
+                    'display
+                    `(space :width ,ctrlf-zero-length-match-width)
+                    'face 'ctrlf-highlight-active))))
               (when ctrlf-highlight-current-line
                 (let ((ol (make-overlay
                            (save-excursion
