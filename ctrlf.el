@@ -78,9 +78,9 @@ events and the values are command symbols."
     ([remap beginning-of-buffer]            . ctrlf-first-match)
     ([remap end-of-buffer]                  . ctrlf-last-match)
     ([remap recenter]                       . ctrlf-recenter)
-    ("TAB"       . ctrlf-next-match-or-previous-history-element)
-    ("S-TAB"     . ctrlf-previous-match-or-previous-history-element)
-    ("<backtab>" . ctrlf-previous-match-or-previous-history-element))
+    ("TAB"       . ctrlf-next-match)
+    ("S-TAB"     . ctrlf-previous-match)
+    ("<backtab>" . ctrlf-previous-match))
   "Keybindings enabled in minibuffer during search. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 entering the minibuffer. The keys are strings or raw key events
