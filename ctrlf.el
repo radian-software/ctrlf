@@ -350,6 +350,7 @@ non-nil."
       (unless (equal input ctrlf--last-input)
         (setq ctrlf--last-input input)
         (with-current-buffer (window-buffer (minibuffer-selected-window))
+          ;; Jump to the next match.
           (let ((prev-point (point)))
             (goto-char ctrlf--current-starting-point)
             (if (ctrlf--search input :bound 'wraparound)
@@ -372,6 +373,9 @@ non-nil."
             (ctrlf-recenter))
           (redisplay)
           (ctrlf--clear-persistent-overlays)
+          ;; If there was a match, find all the other matches in the
+          ;; buffer and count them. Display that info in the
+          ;; minibuffer.
           (when ctrlf--match-bounds
             (let ((cur-point (point))
                   (num-matches 0)
@@ -388,6 +392,8 @@ non-nil."
                   (let ((ctrlf--persist-messages t))
                     (ctrlf--message
                      "%d/%d" cur-index num-matches))))))
+          ;; Highlight the active match specially, and optionally also
+          ;; the line on which it appears.
           (when ctrlf--match-bounds
             (let ((ol (make-overlay
                        (car ctrlf--match-bounds) (cdr ctrlf--match-bounds))))
@@ -403,6 +409,9 @@ non-nil."
                            (1+ (line-end-position))))))
                 (push ol ctrlf--persistent-overlays)
                 (overlay-put ol 'face 'ctrlf-highlight-line))))
+          ;; Highlight the other matches. This entails finding them
+          ;; all again, which is blatantly a waste of time. To
+          ;; optimize, re-use the result from above.
           (let ((start (window-start (minibuffer-selected-window)))
                 (end (window-end (minibuffer-selected-window))))
             (save-excursion
