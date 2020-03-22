@@ -77,6 +77,8 @@ events and the values are command symbols."
     ([remap minibuffer-beginning-of-buffer] . ctrlf-first-match)
     ([remap beginning-of-buffer]            . ctrlf-first-match)
     ([remap end-of-buffer]                  . ctrlf-last-match)
+    ([remap scroll-up-command]              . ctrlf-next-page)
+    ([remap scroll-down-command]            . ctrlf-previous-page)
     ([remap recenter-top-bottom]            . ctrlf-recenter-top-bottom)
     ("TAB"       . ctrlf-next-match)
     ("S-TAB"     . ctrlf-previous-match)
@@ -591,6 +593,30 @@ non-nil."
           (with-current-buffer
               (window-buffer (minibuffer-selected-window))
             (point-max))))
+  ;; Next search should go backward.
+  (setq ctrlf--backward-p t)
+  ;; Force recalculation of search.
+  (setq ctrlf--last-input nil))
+
+(defun ctrlf-next-page ()
+  "Move to first match appearing after the current screen, if there is one.
+Wrap around if necessary."
+  (interactive)
+  (when ctrlf--match-bounds
+    (setq ctrlf--current-starting-point
+          (window-end (minibuffer-selected-window))))
+  ;; Next search should go forward.
+  (setq ctrlf--backward-p nil)
+  ;; Force recalculation of search.
+  (setq ctrlf--last-input nil))
+
+(defun ctrlf-previous-page ()
+  "Move to first match appearing before the current screen, if there is one.
+Wrap around if necessary."
+  (interactive)
+  (when ctrlf--match-bounds
+    (setq ctrlf--current-starting-point
+          (window-start (minibuffer-selected-window))))
   ;; Next search should go backward.
   (setq ctrlf--backward-p t)
   ;; Force recalculation of search.
