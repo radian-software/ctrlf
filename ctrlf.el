@@ -41,11 +41,18 @@
   :type 'boolean)
 
 (defcustom ctrlf-style-alist
-  '((literal      . (:prompt "literal"  :translator regexp-quote))
-    (regexp       . (:prompt "regexp"   :translator identity))
-    (fuzzy        . (:prompt "fuzzy"    :translator ctrlf--fuzzy-translate))
+  '((literal      . (:prompt "literal"
+                             :translator regexp-quote
+                             :case-fold ctrlf-no-uppercase-literal-p))
+    (regexp       . (:prompt "regexp"
+                             :translator identity
+                             :case-fold ctrlf-no-uppercase-regexp-p))
+    (fuzzy        . (:prompt "fuzzy"
+                             :translator ctrlf--fuzzy-translate
+                             :case-fold ctrlf-no-uppercase-literal-p))
     (fuzzy-regexp . (:prompt "fuzzy re"
-                             :translator ctrlf--fuzzy-regexp-translate)))
+                             :translator ctrlf--fuzzy-regexp-translate
+                             :case-fold ctrlf-no-uppercase-regexp-p)))
   "The displayed name and regexp translator for CTRLF search styles.
 The key is the symbol of the search style, the value is a list composed of the
 displayed name and the regexp translator."
@@ -82,7 +89,8 @@ events and the values are command symbols."
     ([remap recenter-top-bottom]            . ctrlf-recenter-top-bottom)
     ("TAB"       . ctrlf-next-match)
     ("S-TAB"     . ctrlf-previous-match)
-    ("<backtab>" . ctrlf-previous-match))
+    ("<backtab>" . ctrlf-previous-match)
+    ("M-s c"     . ctrlf-toggle-case-fold-search))
   "Keybindings enabled in minibuffer during search. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 entering the minibuffer. The keys are strings or raw key events
@@ -143,6 +151,16 @@ Nil means we are currently searching forward.")
 
 (defvar ctrlf--match-bounds nil
   "Cons cell of current match beginning and end, or nil if no match.")
+
+(defvar ctrlf--case-fold-search :auto
+  "Whether `case-fold-search' is enabled in the current CTRLF session.
+Value `:auto' means to guess based on the current search query.")
+
+(defvar ctrlf--case-fold-search-toggled nil
+  "Whether `case-fold-search' has been toggled, so a message should be shown.")
+
+(defvar ctrlf--case-fold-search-last-guessed nil
+  "Last guessed value of `case-fold-search'.")
 
 (defvar ctrlf--final-window-start nil
   "Original buffer's `window-start' just before exiting minibuffer.
@@ -218,6 +236,16 @@ divided by \".*\" are quoted."
 A single space character is translated into \".*\", while N
 spaces (N >= 2) are translated in to N-1 spaces."
   (string-join (ctrlf--fuzzy-split str) ".*"))
+
+(defun ctrlf-no-uppercase-literal-p (query)
+  "Return non-nil if literal QUERY contains no uppercase letters."
+  (require 'isearch)
+  (isearch-no-upper-case-p query nil))
+
+(defun ctrlf-no-uppercase-regexp-p (query)
+  "Return non-nil if regexp QUERY contains no uppercase letters."
+  (require 'isearch)
+  (isearch-no-upper-case-p query t))
 
 (defun ctrlf--finalize ()
   "Perform cleanup that has to happen after the minibuffer is exited."
@@ -392,6 +420,15 @@ non-nil."
                         (alist-get ctrlf--style ctrlf-style-alist)
                         :translator))
            (regexp (funcall translator input))
+           (case-fold-search
+            (if (eq ctrlf--case-fold-search :auto)
+                (setq ctrlf--case-fold-search-last-guessed
+                      (funcall (plist-get
+                                (alist-get
+                                 ctrlf--style ctrlf-style-alist)
+                                :case-fold)
+                               input))
+              ctrlf--case-fold-search))
            ;; Simple hack for the sake of performance, because taking
            ;; a regexp that always matches and matching it against the
            ;; entire buffer takes a long time, and we should avoid
@@ -507,7 +544,19 @@ non-nil."
                              (goto-char (cdr ctrlf--match-bounds))
                              (1+ (line-end-position))))))
                   (push ol ctrlf--persistent-overlays)
-                  (overlay-put ol 'face 'ctrlf-highlight-line))))))))))
+                  (overlay-put ol 'face 'ctrlf-highlight-line)))))))
+      ;; Ok, so it doesn't make any sense *per se* for this code to be
+      ;; down here. But when I put it up higher, the cursor hack in
+      ;; `ctrlf--fix-overlay-cursor-props' doesn't work correctly. Yes
+      ;; this whole thing is a mess and needs to be fixed properly. We
+      ;; are accepting pull requests :P
+      (when ctrlf--case-fold-search-toggled
+        (ctrlf--message
+         "Case-sensitivity %s"
+         (if case-fold-search
+             "disabled"
+           "enabled"))
+        (setq ctrlf--case-fold-search-toggled nil)))))
 
 (defun ctrlf--start ()
   "Start CTRLF session assuming config vars are set up already."
@@ -522,6 +571,8 @@ non-nil."
     (setq ctrlf--starting-point (point))
     (setq ctrlf--current-starting-point (point))
     (setq ctrlf--last-input nil)
+    (setq ctrlf--case-fold-search :auto)
+    (setq ctrlf--case-fold-search-toggled nil)
     (minibuffer-with-setup-hook
         (lambda ()
           (setq ctrlf--minibuffer (current-buffer))
@@ -619,6 +670,23 @@ Wrap around if necessary."
           (window-start (minibuffer-selected-window))))
   ;; Next search should go backward.
   (setq ctrlf--backward-p t)
+  ;; Force recalculation of search.
+  (setq ctrlf--last-input nil))
+
+(defun ctrlf-toggle-case-fold-search ()
+  "Toggle `case-fold-search' for current CTRLF session.
+By default the appropriate value is guessed by checking whether
+the input has any uppercase letters. Toggling will fix the value,
+initially to the opposite of the guessed value for the current
+query."
+  (interactive)
+  (when (eq ctrlf--case-fold-search :auto)
+    (setq ctrlf--case-fold-search
+          ctrlf--case-fold-search-last-guessed))
+  (setq ctrlf--case-fold-search
+        (not ctrlf--case-fold-search))
+  ;; Queue a message to be displayed.
+  (setq ctrlf--case-fold-search-toggled t)
   ;; Force recalculation of search.
   (setq ctrlf--last-input nil))
 
@@ -777,6 +845,7 @@ See `ctrlf-mode-bindings' to customize."
 (provide 'ctrlf)
 
 ;; Local Variables:
+;; checkdoc-verb-check-experimental-flag: nil
 ;; indent-tabs-mode: nil
 ;; outline-regexp: ";;;;* "
 ;; End:
