@@ -78,9 +78,7 @@ events and the values are command symbols."
     ([remap beginning-of-buffer]            . ctrlf-first-match)
     ([remap end-of-buffer]                  . ctrlf-last-match)
     ([remap recenter]                       . ctrlf-recenter)
-    ("C-s"       . ctrlf-next-match-or-previous-history-element)
     ("TAB"       . ctrlf-next-match-or-previous-history-element)
-    ("C-r"       . ctrlf-previous-match-or-previous-history-element)
     ("S-TAB"     . ctrlf-previous-match-or-previous-history-element)
     ("<backtab>" . ctrlf-previous-match-or-previous-history-element))
   "Keybindings enabled in minibuffer during search. This is not a keymap.
@@ -495,85 +493,6 @@ non-nil."
          (ctrlf--prompt) nil keymap nil 'ctrlf-search-history
          (thing-at-point 'symbol t))))))
 
-(defun ctrlf-forward ()
-  "Search forward for literal string."
-  (interactive)
-  (when ctrlf--active-p
-    (user-error "Already in the middle of a CTRLF search"))
-  (setq ctrlf--backward-p nil)
-  (setq ctrlf--style 'literal)
-  (ctrlf--start))
-
-(defun ctrlf-backward ()
-  "Search backward for literal string."
-  (interactive)
-  (when ctrlf--active-p
-    (user-error "Already in the middle of a CTRLF search"))
-  (setq ctrlf--backward-p t)
-  (setq ctrlf--style 'literal)
-  (ctrlf--start))
-
-(defun ctrlf-forward-regexp ()
-  "Search forward for regexp."
-  (interactive)
-  (when ctrlf--active-p
-    (user-error "Already in the middle of a CTRLF search"))
-  (setq ctrlf--backward-p nil)
-  (setq ctrlf--style 'regexp)
-  (ctrlf--start))
-
-(defun ctrlf-backward-regexp ()
-  "Search backward for regexp."
-  (interactive)
-  (when ctrlf--active-p
-    (user-error "Already in the middle of a CTRLF search"))
-  (setq ctrlf--backward-p t)
-  (setq ctrlf--style 'regexp)
-  (ctrlf--start))
-
-(defun ctrlf-forward-fuzzy ()
-  "Search forward for literal string in the fuzzy style."
-  (interactive)
-  (when ctrlf--active-p
-    (user-error "Already in the middle of a CTRLF search"))
-  (setq ctrlf--backward-p nil)
-  (setq ctrlf--style 'fuzzy)
-  (ctrlf--start))
-
-(defun ctrlf-backward-fuzzy ()
-  "Search backward for literal string in the fuzzy style."
-  (interactive)
-  (when ctrlf--active-p
-    (user-error "Already in the middle of a CTRLF search"))
-  (setq ctrlf--backward-p t)
-  (setq ctrlf--style 'fuzzy)
-  (ctrlf--start))
-
-(defun ctrlf-forward-fuzzy-regexp ()
-  "Search forward for regexp in the fuzzy-regexp style."
-  (interactive)
-  (when ctrlf--active-p
-    (user-error "Already in the middle of a CTRLF search"))
-  (setq ctrlf--backward-p nil)
-  (setq ctrlf--style 'fuzzy-regexp)
-  (ctrlf--start))
-
-(defun ctrlf-backward-fuzzy-regexp ()
-  "Search backward for regexp in the fuzzy-regexp style."
-  (interactive)
-  (when ctrlf--active-p
-    (user-error "Already in the middle of a CTRLF search"))
-  (setq ctrlf--backward-p t)
-  (setq ctrlf--style 'fuzzy-regexp)
-  (ctrlf--start))
-
-(defun ctrlf-recenter ()
-  "Display current match in the center of the window."
-  (interactive)
-  (with-selected-window
-      (minibuffer-selected-window)
-    (recenter)))
-
 (defun ctrlf-next-match ()
   "Move to next match, if there is one. Wrap around if necessary."
   (interactive)
@@ -608,30 +527,6 @@ non-nil."
   ;; Force recalculation of search.
   (setq ctrlf--last-input nil))
 
-(defun ctrlf-next-match-or-previous-history-element ()
-  "Move to next match or re-start last search.
-Re-start the last search if there is currently no input, and move
-to next match otherwise. In either case, the resulting search
-direction is forwards."
-  (interactive)
-  (if (string-empty-p (field-string (point-max)))
-      (progn
-        (setq ctrlf--backward-p nil)
-        (previous-history-element 1))
-    (ctrlf-next-match)))
-
-(defun ctrlf-previous-match-or-previous-history-element ()
-  "Move to previous match or re-start last search.
-Re-start the last search if there is currently no input, and move
-to previous match otherwise. In either case, the resulting search
-direction is backwards."
-  (interactive)
-  (if (string-empty-p (field-string (point-max)))
-      (progn
-        (setq ctrlf--backward-p t)
-        (previous-history-element 1))
-    (ctrlf-previous-match)))
-
 (defun ctrlf-first-match ()
   "Move to first match, if there is one."
   (interactive)
@@ -658,6 +553,92 @@ direction is backwards."
   ;; Force recalculation of search.
   (setq ctrlf--last-input nil))
 
+(defun ctrlf--forward (style)
+  "Search forward using given STYLE (see `ctrlf-style-alist').
+If already in a search, go to next candidate, or if no input then
+insert the previous search string."
+  (let ((inhibit-history (or (not (eq style ctrlf--style))
+                             (not (eq nil   ctrlf--backward-p)))))
+    (setq ctrlf--style style)
+    (if ctrlf--active-p
+        (if (and (not inhibit-history)
+                 (string-empty-p (field-string (point-max))))
+            (previous-history-element 1)
+          (ctrlf-next-match))
+      (setq ctrlf--backward-p nil)
+      (ctrlf--start))))
+
+(defun ctrlf--backward (style)
+  "Search backward using given STYLE (see `ctrlf-style-alist').
+If already in a search, go to previous candidate, or if no input
+then insert the previous search string."
+  (let ((inhibit-history (or (not (eq style ctrlf--style))
+                             (not (eq t     ctrlf--backward-p)))))
+    (setq ctrlf--style style)
+    (if ctrlf--active-p
+        (if (and (not inhibit-history)
+                 (string-empty-p (field-string (point-max))))
+            (previous-history-element 1)
+          (ctrlf-previous-match))
+      (setq ctrlf--backward-p t)
+      (ctrlf--start))))
+
+(defun ctrlf-forward ()
+  "Search forward for literal string.
+If already in a search, go to next candidate, or if no input then
+insert the previous search string."
+  (interactive)
+  (ctrlf--forward 'literal))
+
+(defun ctrlf-backward ()
+  "Search backward for literal string.
+If already in a search, go to previous candidate, or if no input
+then insert the previous search string."
+  (interactive)
+  (ctrlf--backward 'literal))
+
+(defun ctrlf-forward-regexp ()
+  "Search forward for regexp.
+If already in a search, go to next candidate, or if no input then
+insert the previous search string."
+  (interactive)
+  (ctrlf--forward 'regexp))
+
+(defun ctrlf-backward-regexp ()
+  "Search backward for regexp.
+If already in a search, go to previous candidate, or if no input
+then insert the previous search string."
+  (interactive)
+  (ctrlf--backward 'regexp))
+
+(defun ctrlf-forward-fuzzy ()
+  "Fuzzy search forward for literal string.
+If already in a search, go to next candidate, or if no input then
+insert the previous search string."
+  (interactive)
+  (ctrlf--forward 'fuzzy))
+
+(defun ctrlf-backward-fuzzy ()
+  "Fuzzy search backward for literal string.
+If already in a search, go to previous candidate, or if no input
+then insert the previous search string."
+  (interactive)
+  (ctrlf--backward 'fuzzy))
+
+(defun ctrlf-forward-fuzzy-regexp ()
+  "Fuzzy search forward for literal string.
+If already in a search, go to next candidate, or if no input then
+insert the previous search string."
+  (interactive)
+  (ctrlf--forward 'fuzzy-regexp))
+
+(defun ctrlf-backward-fuzzy-regexp ()
+  "Fuzzy search backward for literal string.
+If already in a search, go to previous candidate, or if no input
+then insert the previous search string."
+  (interactive)
+  (ctrlf--backward 'fuzzy-regexp))
+
 (defun ctrlf-cancel ()
   "Exit search, returning point to original position."
   (interactive)
@@ -665,6 +646,13 @@ direction is backwards."
   (ctrlf--clear-persistent-overlays)
   (set-window-point (minibuffer-selected-window) ctrlf--starting-point)
   (abort-recursive-edit))
+
+(defun ctrlf-recenter ()
+  "Display current match in the center of the window."
+  (interactive)
+  (with-selected-window
+      (minibuffer-selected-window)
+    (recenter)))
 
 (defvar ctrlf--keymap (make-sparse-keymap)
   "Keymap for `ctrlf-mode'. Populated when mode is enabled.
