@@ -557,7 +557,9 @@ non-nil."
   "Search forward using given STYLE (see `ctrlf-style-alist').
 If already in a search, go to next candidate, or if no input then
 insert the previous search string. PRESERVE non-nil means don't
-change the search style."
+change the search style if already in a search."
+  (unless ctrlf--active-p
+    (setq preserve nil))
   (let ((inhibit-history (or (and (not preserve)
                                   (not (eq style ctrlf--style)))
                              (not (eq nil   ctrlf--backward-p)))))
@@ -575,7 +577,9 @@ change the search style."
   "Search backward using given STYLE (see `ctrlf-style-alist').
 If already in a search, go to previous candidate, or if no input
 then insert the previous search string. PRESERVE non-nil means
-don't change the search style."
+don't change the search style if already in a search."
+  (unless ctrlf--active-p
+    (setq preserve nil))
   (let ((inhibit-history (or (and (not preserve)
                                   (not (eq style ctrlf--style)))
                              (not (eq t     ctrlf--backward-p)))))
