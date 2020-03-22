@@ -358,7 +358,7 @@ non-nil."
           (string-match-p regexp "")
         (invalid-regexp
          (ctrlf--message "Invalid regexp: %s" (cadr e))
-         (cl-return)))
+         (setq skip-search t)))
       (unless (equal input ctrlf--last-input)
         (setq ctrlf--last-input input)
         (with-current-buffer (window-buffer (minibuffer-selected-window))
