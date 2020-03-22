@@ -242,7 +242,9 @@ as a backport for Emacs 26 and earlier where signaling a message
 while the minibuffer is active causes an absolutely horrendous
 mess."
   (with-current-buffer ctrlf--minibuffer
-    (let ((ol (make-overlay (point-max) (point-max))))
+    ;; Setting REAR-ADVANCE:
+    ;; <https://github.com/raxod502/ctrlf/issues/4>
+    (let ((ol (make-overlay (point-max) (point-max) nil nil 'rear-advance)))
       (if ctrlf--persist-messages
           (push ol ctrlf--persistent-overlays)
         (push ol ctrlf--transient-overlays))
