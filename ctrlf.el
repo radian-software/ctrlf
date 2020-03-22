@@ -259,20 +259,20 @@ mess."
 (cl-defun ctrlf--search
     (query &key
            (style :unset) (backward :unset) (forward :unset)
-           wraparound bound)
+           bound)
   "Single-buffer text search primitive. Search for QUERY.
 STYLE controls the search style. If it's unset, use the value of
 `ctrlf--style'. BACKWARD controls whether to do a forward
 search (nil) or a backward search (non-nil), else check
-`ctrlf--backward-p'. LITERAL and FORWARD do the same but the
-meaning of their arguments are inverted. WRAPAROUND means keep
-searching at the beginning (or end, respectively) of the buffer,
-rather than stopping. BOUND, if non-nil, is a limit for the
-search as in `search-forward' and friend. Providing BOUND
-automatically disables WRAPAROUND. If the search succeeds, move
-point to the end (for forward searches) or beginning (for
-backward searches) of the match. If the search fails, return nil,
-but still move point."
+`ctrlf--backward-p'. FORWARD does the same but the meaning of its
+argument is inverted. BOUND, if non-nil, is a limit for the
+search as in `search-forward' and friends. BOUND can also be the
+symbol `wraparound', meaning keep searching at the beginning (or
+end, respectively) of the buffer, rather than stopping. If the
+search succeeds, move point to the end (for forward searches) or
+beginning (for backward searches) of the match. If the search
+fails, return nil, but still move point. Otherwise, return
+non-nil."
   (let* ((style (cond
                  ((not (eq style :unset))
                   style)
@@ -285,20 +285,21 @@ but still move point."
                      (not forward))
                     (t
                      ctrlf--backward-p)))
-         (wraparound (and wraparound (not bound)))
          (func (if backward
                    #'re-search-backward
                  #'re-search-forward))
          (query (funcall
                  (plist-get (alist-get style ctrlf-style-alist) :translator)
-                 query)))
+                 query))
+         (wraparound (eq bound 'wraparound))
+         (bound (and (integer-or-marker-p bound) bound)))
     (or (funcall func query bound 'noerror)
         (when wraparound
           (goto-char
            (if backward
                (point-max)
              (point-min)))
-          (funcall func query bound 'noerror)))))
+          (funcall func query nil 'noerror)))))
 
 (defun ctrlf--prompt ()
   "Return the prompt to use in the minibuffer."
@@ -351,7 +352,7 @@ but still move point."
         (with-current-buffer (window-buffer (minibuffer-selected-window))
           (let ((prev-point (point)))
             (goto-char ctrlf--current-starting-point)
-            (if (ctrlf--search input :wraparound t)
+            (if (ctrlf--search input :bound 'wraparound)
                 (progn
                   (goto-char (match-beginning 0))
                   (setq ctrlf--match-bounds
