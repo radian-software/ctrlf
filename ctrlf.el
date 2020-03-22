@@ -553,13 +553,16 @@ non-nil."
   ;; Force recalculation of search.
   (setq ctrlf--last-input nil))
 
-(defun ctrlf--forward (style)
+(defun ctrlf--forward (style &optional preserve)
   "Search forward using given STYLE (see `ctrlf-style-alist').
 If already in a search, go to next candidate, or if no input then
-insert the previous search string."
-  (let ((inhibit-history (or (not (eq style ctrlf--style))
+insert the previous search string. PRESERVE non-nil means don't
+change the search style."
+  (let ((inhibit-history (or (and (not preserve)
+                                  (not (eq style ctrlf--style)))
                              (not (eq nil   ctrlf--backward-p)))))
-    (setq ctrlf--style style)
+    (unless preserve
+      (setq ctrlf--style style))
     (if ctrlf--active-p
         (if (and (not inhibit-history)
                  (string-empty-p (field-string (point-max))))
@@ -568,13 +571,16 @@ insert the previous search string."
       (setq ctrlf--backward-p nil)
       (ctrlf--start))))
 
-(defun ctrlf--backward (style)
+(defun ctrlf--backward (style &optional preserve)
   "Search backward using given STYLE (see `ctrlf-style-alist').
 If already in a search, go to previous candidate, or if no input
-then insert the previous search string."
-  (let ((inhibit-history (or (not (eq style ctrlf--style))
+then insert the previous search string. PRESERVE non-nil means
+don't change the search style."
+  (let ((inhibit-history (or (and (not preserve)
+                                  (not (eq style ctrlf--style)))
                              (not (eq t     ctrlf--backward-p)))))
-    (setq ctrlf--style style)
+    (unless preserve
+      (setq ctrlf--style style))
     (if ctrlf--active-p
         (if (and (not inhibit-history)
                  (string-empty-p (field-string (point-max))))
@@ -583,59 +589,67 @@ then insert the previous search string."
       (setq ctrlf--backward-p t)
       (ctrlf--start))))
 
-(defun ctrlf-forward ()
+(defun ctrlf-forward (&optional arg)
   "Search forward for literal string.
 If already in a search, go to next candidate, or if no input then
-insert the previous search string."
-  (interactive)
-  (ctrlf--forward 'literal))
+insert the previous search string. If in a non-literal search,
+change back to literal search if prefix ARG is provided."
+  (interactive "P")
+  (ctrlf--forward 'literal (null arg)))
 
-(defun ctrlf-backward ()
+(defun ctrlf-backward (&optional arg)
   "Search backward for literal string.
 If already in a search, go to previous candidate, or if no input
-then insert the previous search string."
-  (interactive)
-  (ctrlf--backward 'literal))
+then insert the previous search string. If in a non-literal
+search, change back to literal search if prefix ARG is provided."
+  (interactive "P")
+  (ctrlf--backward 'literal (null arg)))
 
 (defun ctrlf-forward-regexp ()
   "Search forward for regexp.
 If already in a search, go to next candidate, or if no input then
-insert the previous search string."
+insert the previous search string. If in a non-regexp search,
+change back to regexp search."
   (interactive)
   (ctrlf--forward 'regexp))
 
 (defun ctrlf-backward-regexp ()
   "Search backward for regexp.
 If already in a search, go to previous candidate, or if no input
-then insert the previous search string."
+then insert the previous search string. If in a non-regexp
+search, change back to regexp search."
   (interactive)
   (ctrlf--backward 'regexp))
 
 (defun ctrlf-forward-fuzzy ()
   "Fuzzy search forward for literal string.
 If already in a search, go to next candidate, or if no input then
-insert the previous search string."
+insert the previous search string. If in a non-fuzzy search,
+change back to fuzzy search."
   (interactive)
   (ctrlf--forward 'fuzzy))
 
 (defun ctrlf-backward-fuzzy ()
   "Fuzzy search backward for literal string.
 If already in a search, go to previous candidate, or if no input
-then insert the previous search string."
+then insert the previous search string. If in a non-fuzzy search,
+change back to fuzzy search."
   (interactive)
   (ctrlf--backward 'fuzzy))
 
 (defun ctrlf-forward-fuzzy-regexp ()
   "Fuzzy search forward for literal string.
 If already in a search, go to next candidate, or if no input then
-insert the previous search string."
+insert the previous search string. If in a non-fuzzy-regexp
+search, change back to fuzzy-regexp search."
   (interactive)
   (ctrlf--forward 'fuzzy-regexp))
 
 (defun ctrlf-backward-fuzzy-regexp ()
   "Fuzzy search backward for literal string.
 If already in a search, go to previous candidate, or if no input
-then insert the previous search string."
+then insert the previous search string. If in a non-fuzzy-regexp
+search, change back to fuzzy-regexp search."
   (interactive)
   (ctrlf--backward 'fuzzy-regexp))
 
