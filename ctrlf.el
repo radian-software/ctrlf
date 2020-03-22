@@ -659,6 +659,8 @@ search, change back to fuzzy-regexp search."
   (ctrlf--clear-transient-overlays)
   (ctrlf--clear-persistent-overlays)
   (set-window-point (minibuffer-selected-window) ctrlf--starting-point)
+  ;; Dirty hack to solve <https://github.com/raxod502/ctrlf/issues/6>.
+  (redisplay)
   (abort-recursive-edit))
 
 (defun ctrlf-recenter ()
