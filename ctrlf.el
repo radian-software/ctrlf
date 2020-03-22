@@ -154,65 +154,68 @@ I have literally no idea why this is needed.")
 Assume that S2 has the same properties throughout."
   (apply #'propertize s1 (text-properties-at 0 s2)))
 
-(defun ctrlf--fuzzy-split (str)
-  "Split STR into a list of substrs.
-STR is splitted by spaces. A single space is substituted by
-\".*\", while N consecutive spaces are substituted by N-1
-spaces."
-  (let* ((last-is-empty t)
-         ;; By `split-string', N spaces will become N-1 empty strings, but at
-         ;; the beginning/end of the string, they become N empty strings. We'll
-         ;; deal with this later.
-         (splits (split-string str " "))
-         (substrs nil))
-    (dolist (split splits)
-      (cond
-       ((string-empty-p split)
-        (setq last-is-empty t)
-        (push " " substrs))
-       (t
-        (if last-is-empty
-            (push split substrs)
-          (push ".*" substrs)
-          (push split substrs))
-        (setq last-is-empty nil))))
-    ;; When there's only one space at the beginning of `substrs', this means a
-    ;; ".*". It's not pushed into `substrs' since there's nothing more comes
-    ;; from `splits' to let that happen. So we substitute it with ".*". When
-    ;; there are more than one spaces, we should remove one due to the
-    ;; `split-string' problem mentioned above.
-    (when (string= (car substrs) " ")
-      (if (string= (nth 1 substrs) " ")
-          (pop substrs)
-        (setcar substrs ".*")))
-    (setq substrs (nreverse substrs))
-    ;; We should also do the same thing to the other end of `substrs'.
-    (when (string= (car substrs) " ")
-      (if (string= (nth 1 substrs) " ")
-          (pop substrs)
-        (setcar substrs ".*")))
-    substrs))
+;; Stolen (with love) from
+;; <https://github.com/raxod502/prescient.el/blob/7fd8c3b8028da4733434940c4aac1209281bef58/prescient.el#L242-L288>.
+(defun ctrlf--fuzzy-split (query)
+  "Split QUERY string into sub-queries.
+The query is split on spaces, but a sequence of two or more
+spaces has one space removed and is treated literally rather than
+as a sub-query delimiter."
+  (if (string-match-p "\\` *\\'" query)
+      ;; If string is zero or one spaces, then we match everything.
+      ;; Return an empty subquery list.
+      (unless (<= (length query) 1)
+        ;; Otherwise, the number of spaces should be reduced by one.
+        (list (substring query 1)))
+    ;; Trim off a single space from the beginning and end, if present.
+    ;; Otherwise, they would generate empty splits and cause us to
+    ;; match literal whitespace.
+    (setq query (replace-regexp-in-string
+                 "\\` ?\\(.*?\\) ?\\'" "\\1" query 'fixedcase))
+    (let ((splits (split-string query " "))
+          (subquery "")
+          (token-found nil)
+          (subqueries nil))
+      (dolist (split splits)
+        ;; Check for empty split, meaning two consecutive spaces in
+        ;; the original query.
+        (if (string-empty-p split)
+            (progn
+              ;; Consecutive spaces mean literal spaces in the
+              ;; subquery under construction.
+              (setq subquery (concat subquery " "))
+              ;; If we get a non-empty split, append it to the
+              ;; subquery rather than parsing it as another subquery.
+              (setq token-found nil))
+          ;; Possibly add the collected string as a new subquery.
+          (when token-found
+            (push subquery subqueries)
+            (setq subquery ""))
+          ;; Either start a new subquery or append to the existing one
+          ;; (in the case of previously seeing an empty split).
+          (setq subquery (concat subquery split))
+          ;; If another non-empty split is found, it's a separate
+          ;; subquery.
+          (setq token-found t)))
+      ;; Check if we hit the end of the string while still
+      ;; constructing a subquery, and handle.
+      (unless (string-empty-p subquery)
+        (push subquery subqueries))
+      ;; We added the subqueries in reverse order.
+      (nreverse subqueries))))
 
 (defun ctrlf--fuzzy-translate (str)
   "Translate the literal input STR to a fuzzy regexp.
 A single space character is translated into \".*\", while N
 spaces (N >= 2) are translated in to N-1 spaces. The groups
 divided by \".*\" are quoted."
-  (let ((substr-replace
-         (lambda (substr)
-           (if (string= ".*" substr)
-               substr
-             (regexp-quote substr)))))
-    (apply #'concat
-           (cl-map 'list
-                   substr-replace
-                   (ctrlf--fuzzy-split str)))))
+  (string-join (mapcar #'regexp-quote (ctrlf--fuzzy-split str)) ".*"))
 
 (defun ctrlf--fuzzy-regexp-translate (str)
   "Translate the user inputted regexp STR to a fuzzy regexp.
 A single space character is translated into \".*\", while N
 spaces (N >= 2) are translated in to N-1 spaces."
-  (apply #'concat (ctrlf--fuzzy-split str)))
+  (string-join (ctrlf--fuzzy-split str) ".*"))
 
 (defun ctrlf--finalize ()
   "Perform cleanup that has to happen after the minibuffer is exited."
