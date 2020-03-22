@@ -233,7 +233,7 @@ spaces (N >= 2) are translated in to N-1 spaces."
   (remove-hook 'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook 'local)
   (add-hook 'post-command-hook #'ctrlf--finalize))
 
-(defvar ctrlf--persist-messages t
+(defvar ctrlf--persist-messages nil
   "Whether `ctrlf--message' will show persistent messages.
 If non-nil, then messages will persist until the next
 recomputation of CTRLF's overlays. Persistent messages will be
