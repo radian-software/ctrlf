@@ -374,15 +374,27 @@ non-nil."
           (redisplay)
           (ctrlf--clear-persistent-overlays)
           ;; If there was a match, find all the other matches in the
-          ;; buffer and count them. Display that info in the
-          ;; minibuffer.
+          ;; buffer. Count them and highlight the ones that appear in
+          ;; the window. Display that info in the minibuffer.
           (when ctrlf--match-bounds
-            (let ((cur-point (point))
+            (let ((start (window-start (minibuffer-selected-window)))
+                  (end (window-end (minibuffer-selected-window)))
+                  (cur-point (point))
                   (num-matches 0)
                   (cur-index nil))
               (save-excursion
                 (goto-char (point-min))
                 (while (ctrlf--search input :forward t)
+                  (when (and (> (match-end 0) start)
+                             (< (match-beginning 0) end)
+                             (or (<= (match-end 0)
+                                     (car ctrlf--match-bounds))
+                                 (>= (match-beginning 0)
+                                     (cdr ctrlf--match-bounds))))
+                    (let ((ol (make-overlay
+                               (match-beginning 0) (match-end 0))))
+                      (push ol ctrlf--persistent-overlays)
+                      (overlay-put ol 'face 'ctrlf-highlight-passive)))
                   (cl-incf num-matches)
                   (when (and (null cur-index)
                              (>= (point) cur-point))
@@ -408,24 +420,7 @@ non-nil."
                            (goto-char (cdr ctrlf--match-bounds))
                            (1+ (line-end-position))))))
                 (push ol ctrlf--persistent-overlays)
-                (overlay-put ol 'face 'ctrlf-highlight-line))))
-          ;; Highlight the other matches. This entails finding them
-          ;; all again, which is blatantly a waste of time. To
-          ;; optimize, re-use the result from above.
-          (let ((start (window-start (minibuffer-selected-window)))
-                (end (window-end (minibuffer-selected-window))))
-            (save-excursion
-              (goto-char start)
-              (while (ctrlf--search input :forward t :bound end)
-                (when (or (null ctrlf--match-bounds)
-                          (<= (match-end 0)
-                              (car ctrlf--match-bounds))
-                          (>= (match-beginning 0)
-                              (cdr ctrlf--match-bounds)))
-                  (let ((ol (make-overlay
-                             (match-beginning 0) (match-end 0))))
-                    (push ol ctrlf--persistent-overlays)
-                    (overlay-put ol 'face 'ctrlf-highlight-passive)))))))))))
+                (overlay-put ol 'face 'ctrlf-highlight-line)))))))))
 
 (defun ctrlf--start ()
   "Start CTRLF session assuming config vars are set up already."
