@@ -375,7 +375,9 @@ non-nil."
   (save-excursion
     (let* ((old-prompt (field-string (point-min)))
            (new-prompt (ctrlf--copy-properties (ctrlf--prompt) old-prompt))
-           (inhibit-read-only t))
+           (inhibit-read-only t)
+           ;; Prevent this getting set to t by the editing below.
+           (deactivate-mark nil))
       (goto-char (point-min))
       (delete-region (point) (field-end (point)))
       (insert new-prompt)))
