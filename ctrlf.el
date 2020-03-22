@@ -337,13 +337,14 @@ non-nil."
            (translator (plist-get
                         (alist-get ctrlf--style ctrlf-style-alist)
                         :translator))
-           (regexp (funcall translator input)))
+           (regexp (funcall translator input))
+           ;; Simple hack for the sake of performance, because taking
+           ;; a regexp that always matches and matching it against the
+           ;; entire buffer takes a long time, and we should avoid
+           ;; doing this every time CTRLF is launched.
+           (skip-search (string-empty-p regexp)))
       (condition-case e
-          (when (string-match-p regexp "")
-            ;; Let's just rule out zero-length matches entirely,
-            ;; they're not interesting and they make the
-            ;; implementation more complicated and slower.
-            (cl-return))
+          (string-match-p regexp "")
         (invalid-regexp
          (ctrlf--message "Invalid regexp: %s" (cadr e))
          (cl-return)))
@@ -353,7 +354,8 @@ non-nil."
           ;; Jump to the next match.
           (let ((prev-point (point)))
             (goto-char ctrlf--current-starting-point)
-            (if (ctrlf--search input :bound 'wraparound)
+            (if (and (not skip-search)
+                     (ctrlf--search input :bound 'wraparound))
                 (progn
                   (goto-char (match-beginning 0))
                   (setq ctrlf--match-bounds
@@ -373,10 +375,10 @@ non-nil."
             (ctrlf-recenter))
           (redisplay)
           (ctrlf--clear-persistent-overlays)
-          ;; If there was a match, find all the other matches in the
-          ;; buffer. Count them and highlight the ones that appear in
-          ;; the window. Display that info in the minibuffer.
           (when ctrlf--match-bounds
+            ;; If there was a match, find all the other matches in the
+            ;; buffer. Count them and highlight the ones that appear
+            ;; in the window. Display that info in the minibuffer.
             (let ((start (window-start (minibuffer-selected-window)))
                   (end (window-end (minibuffer-selected-window)))
                   (cur-point (point))
@@ -384,43 +386,49 @@ non-nil."
                   (cur-index nil))
               (save-excursion
                 (goto-char (point-min))
-                (while (ctrlf--search input :forward t)
-                  (when (and (> (match-end 0) start)
-                             (< (match-beginning 0) end)
-                             (or (<= (match-end 0)
-                                     (car ctrlf--match-bounds))
-                                 (>= (match-beginning 0)
-                                     (cdr ctrlf--match-bounds))))
-                    (let ((ol (make-overlay
-                               (match-beginning 0) (match-end 0))))
-                      (push ol ctrlf--persistent-overlays)
-                      (overlay-put ol 'face 'ctrlf-highlight-passive)))
-                  (cl-incf num-matches)
-                  (when (and (null cur-index)
-                             (>= (point) cur-point))
-                    (setq cur-index num-matches))))
+                (cl-block nil
+                  (while (let ((orig-point (point)))
+                           (prog1 (ctrlf--search input :forward t)
+                             (when (= (point) orig-point)
+                               (condition-case _
+                                   (forward-char)
+                                 (end-of-buffer (cl-return))))))
+                    (when (and (> (match-end 0) start)
+                               (< (match-beginning 0) end)
+                               (or (<= (match-end 0)
+                                       (car ctrlf--match-bounds))
+                                   (>= (match-beginning 0)
+                                       (cdr ctrlf--match-bounds))))
+                      (let ((ol (make-overlay
+                                 (match-beginning 0) (match-end 0))))
+                        (push ol ctrlf--persistent-overlays)
+                        (overlay-put ol 'face 'ctrlf-highlight-passive)))
+                    (cl-incf num-matches)
+                    (when (and (null cur-index)
+                               (>= (point) cur-point))
+                      (setq cur-index num-matches)))))
               (with-current-buffer ctrlf--minibuffer
                 (when cur-index
                   (let ((ctrlf--persist-messages t))
                     (ctrlf--message
-                     "%d/%d" cur-index num-matches))))))
-          ;; Highlight the active match specially, and optionally also
-          ;; the line on which it appears.
-          (when ctrlf--match-bounds
-            (let ((ol (make-overlay
-                       (car ctrlf--match-bounds) (cdr ctrlf--match-bounds))))
-              (push ol ctrlf--persistent-overlays)
-              (overlay-put ol 'face 'ctrlf-highlight-active))
-            (when ctrlf-highlight-current-line
+                     "%d/%d" cur-index num-matches)))))
+            ;; Highlight the active match specially, and optionally also
+            ;; the line on which it appears.
+            (when ctrlf--match-bounds
               (let ((ol (make-overlay
-                         (save-excursion
-                           (goto-char (car ctrlf--match-bounds))
-                           (line-beginning-position))
-                         (save-excursion
-                           (goto-char (cdr ctrlf--match-bounds))
-                           (1+ (line-end-position))))))
+                         (car ctrlf--match-bounds) (cdr ctrlf--match-bounds))))
                 (push ol ctrlf--persistent-overlays)
-                (overlay-put ol 'face 'ctrlf-highlight-line)))))))))
+                (overlay-put ol 'face 'ctrlf-highlight-active))
+              (when ctrlf-highlight-current-line
+                (let ((ol (make-overlay
+                           (save-excursion
+                             (goto-char (car ctrlf--match-bounds))
+                             (line-beginning-position))
+                           (save-excursion
+                             (goto-char (cdr ctrlf--match-bounds))
+                             (1+ (line-end-position))))))
+                  (push ol ctrlf--persistent-overlays)
+                  (overlay-put ol 'face 'ctrlf-highlight-line))))))))))
 
 (defun ctrlf--start ()
   "Start CTRLF session assuming config vars are set up already."
@@ -532,7 +540,13 @@ non-nil."
   (interactive)
   (when ctrlf--match-bounds
     ;; Move past current match.
-    (setq ctrlf--current-starting-point (cdr ctrlf--match-bounds)))
+    (setq ctrlf--current-starting-point (cdr ctrlf--match-bounds))
+    ;; Handle zero-length matches.
+    (when (= (car ctrlf--match-bounds)
+             (cdr ctrlf--match-bounds))
+      (if (/= ctrlf--current-starting-point (point-max))
+          (cl-incf ctrlf--current-starting-point)
+        (setq ctrlf--current-starting-point (point-min)))))
   ;; Next search should go forward.
   (setq ctrlf--backward-p nil)
   ;; Force recalculation of search.
@@ -543,7 +557,13 @@ non-nil."
   (interactive)
   (when ctrlf--match-bounds
     ;; Move before current match.
-    (setq ctrlf--current-starting-point (car ctrlf--match-bounds)))
+    (setq ctrlf--current-starting-point (car ctrlf--match-bounds))
+    ;; Handle zero-length matches.
+    (when (= (car ctrlf--match-bounds)
+             (cdr ctrlf--match-bounds))
+      (if (/= ctrlf--current-starting-point (point-min))
+          (cl-decf ctrlf--current-starting-point)
+        (setq ctrlf--current-starting-point (point-max)))))
   ;; Next search should go backward.
   (setq ctrlf--backward-p t)
   ;; Force recalculation of search.
