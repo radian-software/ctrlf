@@ -39,7 +39,7 @@
 ;;;;; User options
 
 (defcustom ctrlf-highlight-current-line t
-  "Non-nil means the entire line of the current match is highlighted."
+  "Non-nil means to highlight the entire line of the current match."
   :type 'boolean)
 
 (defcustom ctrlf-auto-recenter nil
