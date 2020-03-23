@@ -929,6 +929,7 @@ search, change back to fuzzy-regexp search."
   "Keymap for `ctrlf-mode'. Populated when mode is enabled.
 See `ctrlf-mode-bindings'.")
 
+;;;###autoload
 (define-minor-mode ctrlf-mode
   "Minor mode to use CTRLF in place of Isearch.
 See `ctrlf-mode-bindings' to customize."
