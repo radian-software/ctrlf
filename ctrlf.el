@@ -117,7 +117,7 @@ active in the minibuffer during a search."
     ("TAB"       . ctrlf-next-match)
     ("S-TAB"     . ctrlf-previous-match)
     ("<backtab>" . ctrlf-previous-match)
-    ("M-s c"     . ctrlf-toggle-case-fold-search))
+    ("C-o c"     . ctrlf-toggle-case-fold-search))
   "Keybindings enabled in minibuffer during search. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 entering the minibuffer. The keys are strings or raw key events
