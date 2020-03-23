@@ -739,32 +739,34 @@ And self-destruct this hook."
 (defun ctrlf-next-match ()
   "Move to next match, if there is one. Wrap around if necessary."
   (interactive)
-  (when ctrlf--match-bounds
-    ;; Move past current match.
-    (setq ctrlf--current-starting-point (cdr ctrlf--match-bounds))
-    ;; Handle zero-length matches.
-    (when (= (car ctrlf--match-bounds)
-             (cdr ctrlf--match-bounds))
-      (if (/= ctrlf--current-starting-point (point-max))
-          (cl-incf ctrlf--current-starting-point)
-        (setq ctrlf--current-starting-point (point-min)))))
-  ;; Next search should go forward.
-  (setq ctrlf--backward-p nil)
-  ;; Force recalculation of search.
-  (setq ctrlf--last-input nil))
+  (with-current-buffer (window-buffer (minibuffer-selected-window))
+    (when ctrlf--match-bounds
+      ;; Move past current match.
+      (setq ctrlf--current-starting-point (cdr ctrlf--match-bounds))
+      ;; Handle zero-length matches.
+      (when (= (car ctrlf--match-bounds)
+               (cdr ctrlf--match-bounds))
+        (if (/= ctrlf--current-starting-point (point-max))
+            (cl-incf ctrlf--current-starting-point)
+          (setq ctrlf--current-starting-point (point-min)))))
+    ;; Next search should go forward.
+    (setq ctrlf--backward-p nil)
+    ;; Force recalculation of search.
+    (setq ctrlf--last-input nil)))
 
 (defun ctrlf-previous-match ()
   "Move to previous match, if there is one. Wrap around if necessary."
   (interactive)
-  (when ctrlf--match-bounds
-    ;; Move before current match.
-    (setq ctrlf--current-starting-point (car ctrlf--match-bounds))
-    ;; Handle zero-length matches.
-    (when (= (car ctrlf--match-bounds)
-             (cdr ctrlf--match-bounds))
-      (if (/= ctrlf--current-starting-point (point-min))
-          (cl-decf ctrlf--current-starting-point)
-        (setq ctrlf--current-starting-point (point-max)))))
+  (with-current-buffer (window-buffer (minibuffer-selected-window))
+    (when ctrlf--match-bounds
+      ;; Move before current match.
+      (setq ctrlf--current-starting-point (car ctrlf--match-bounds))
+      ;; Handle zero-length matches.
+      (when (= (car ctrlf--match-bounds)
+               (cdr ctrlf--match-bounds))
+        (if (/= ctrlf--current-starting-point (point-min))
+            (cl-decf ctrlf--current-starting-point)
+          (setq ctrlf--current-starting-point (point-max))))))
   ;; Next search should go backward.
   (setq ctrlf--backward-p t)
   ;; Force recalculation of search.
@@ -773,11 +775,9 @@ And self-destruct this hook."
 (defun ctrlf-first-match ()
   "Move to first match, if there is one."
   (interactive)
-  (when ctrlf--match-bounds
-    (setq ctrlf--current-starting-point
-          (with-current-buffer
-              (window-buffer (minibuffer-selected-window))
-            (point-min))))
+  (with-current-buffer (window-buffer (minibuffer-selected-window))
+    (when ctrlf--match-bounds
+      (setq ctrlf--current-starting-point (point-min))))
   ;; Next search should go forward.
   (setq ctrlf--backward-p nil)
   ;; Force recalculation of search.
@@ -786,11 +786,9 @@ And self-destruct this hook."
 (defun ctrlf-last-match ()
   "Move to last match, if there is one."
   (interactive)
-  (when ctrlf--match-bounds
-    (setq ctrlf--current-starting-point
-          (with-current-buffer
-              (window-buffer (minibuffer-selected-window))
-            (point-max))))
+  (with-current-buffer (window-buffer (minibuffer-selected-window))
+    (when ctrlf--match-bounds
+      (setq ctrlf--current-starting-point (point-max))))
   ;; Next search should go backward.
   (setq ctrlf--backward-p t)
   ;; Force recalculation of search.
