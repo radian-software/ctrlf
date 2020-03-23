@@ -220,7 +220,7 @@ The subinputs are joined with \".*\"."
   "Face used to highlight other matches in the buffer.")
 
 (defface ctrlf-highlight-line
-  '((t :inherit highlight))
+  '((t :inherit hl-line))
   "Face used to highlight current line.")
 
 ;;;;; Variables
