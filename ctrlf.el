@@ -102,7 +102,7 @@ active in the minibuffer during a search."
           :value-type function))
 
 (defcustom ctrlf-minibuffer-bindings
-  '(([remap abort-recursive-edit]     . ctrlf-cancel)
+  '(([remap abort-recursive-edit]           . ctrlf-cancel)
     ;; This is bound in `minibuffer-local-map' by loading `delsel', so
     ;; we have to account for it too.
     ([remap minibuffer-keyboard-quit]       . ctrlf-cancel)
