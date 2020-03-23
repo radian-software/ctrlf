@@ -343,7 +343,10 @@ mess."
             (if ctrlf--message-persist-p
                 (push ol ctrlf--persistent-overlays)
               (push ol ctrlf--transient-overlays))
-            (overlay-put ol 'after-string string))))
+            (overlay-put ol 'after-string string)
+            ;; So we can tell it's ours and it is therefore okay to
+            ;; mess with.
+            (overlay-put ol 'ctrlf t))))
       (ctrlf--fix-overlay-cursor-props))))
 
 (defun ctrlf--clear-transient-overlays ()
@@ -633,15 +636,25 @@ later (this should be used at the end of the search)."
                     `(space :width ,ctrlf-zero-length-match-width)
                     'face 'ctrlf-highlight-active))))
               (when ctrlf-highlight-current-line
-                (let ((ol (make-overlay
-                           (save-excursion
-                             (goto-char (car ctrlf--match-bounds))
-                             (line-beginning-position))
-                           (save-excursion
-                             (goto-char (cdr ctrlf--match-bounds))
-                             (line-end-position)))))
+                (let* ((start (save-excursion
+                                (goto-char (car ctrlf--match-bounds))
+                                (line-beginning-position)))
+                       (end (save-excursion
+                              (goto-char (cdr ctrlf--match-bounds))
+                              (line-beginning-position 2)))
+                       (ol (make-overlay start end)))
                   (push ol ctrlf--persistent-overlays)
-                  (overlay-put ol 'face 'ctrlf-highlight-line)))))))
+                  (overlay-put ol 'face 'ctrlf-highlight-line)
+                  (dolist (ol (overlays-in start end))
+                    (when (overlay-get ol 'ctrlf)
+                      (when-let ((string (overlay-get ol 'after-string)))
+                        ;; No need to worry about removing the face
+                        ;; later, as the overlay will get destroyed
+                        ;; anyway by the time that this becomes
+                        ;; relevant.
+                        (add-face-text-property
+                         0 (length string)
+                         'ctrlf-highlight-line nil string))))))))))
       ;; Ok, so it doesn't make any sense *per se* for this code to be
       ;; down here. But when I put it up higher, the cursor hack in
       ;; `ctrlf--fix-overlay-cursor-props' doesn't work correctly. Yes
