@@ -21,10 +21,14 @@
 ;; variable declarations in each section, run M-x occur with the
 ;; following query: ^;;;;* \|^(
 
+;;;; Libraries
+
 (require 'cl-lib)
 (require 'map)
 (require 'subr-x)
 (require 'thingatpt)
+
+;;;; User configuration
 
 (defgroup ctrlf nil
   "More streamlined replacement for Isearch, Swiper, etc."
@@ -32,8 +36,10 @@
   :prefix "ctrlf-"
   :link '(url-link "https://github.com/raxod502/ctrlf"))
 
+;;;;; User options
+
 (defcustom ctrlf-highlight-current-line t
-  "Whether highlight current line or not."
+  "Non-nil means the entire line of the current match is highlighted."
   :type 'boolean)
 
 (defcustom ctrlf-auto-recenter nil
@@ -48,28 +54,44 @@
                              :translator identity
                              :case-fold ctrlf-no-uppercase-regexp-p))
     (fuzzy        . (:prompt "fuzzy"
-                             :translator ctrlf--fuzzy-translate
+                             :translator ctrlf-translate-fuzzy-literal
                              :case-fold ctrlf-no-uppercase-literal-p))
-    (fuzzy-regexp . (:prompt "fuzzy re"
-                             :translator ctrlf--fuzzy-regexp-translate
+    (fuzzy-regexp . (:prompt "fuzzy regexp"
+                             :translator ctrlf-translate-fuzzy-regexp
                              :case-fold ctrlf-no-uppercase-regexp-p)))
-  "The displayed name and regexp translator for CTRLF search styles.
-The key is the symbol of the search style, the value is a list composed of the
-displayed name and the regexp translator."
+  "Alist of CTRLF search styles.
+Each search style defines a different way to interpret your
+query, for example as a literal string or as a regexp. The keys
+are unique identifying symbols which can be passed to
+`ctrlf-forward' and `ctrlf-backward'. The values are property
+lists with the following keys (all mandatory):
+- `:prompt': string to be displayed in minibuffer prompt after
+  \"CTRLF\".
+- `:translator': function which takes your query string and
+  returns a regexp, e.g. `regexp-quote' for a literal search.
+- `:case-fold': function which takes your query string and
+  returns a value for `case-fold-search' to use by default (for
+  example, non-nil only if the query does not contain any
+  uppercase letters)."
   :type '(alist
           :key-type symbol
           :value-type (list (const :prompt) string
-                            (const :translator) function)))
+                            (const :translator) function
+                            (const :case-fold) function)))
 
 (defcustom ctrlf-mode-bindings
-  '(([remap isearch-forward        ] . ctrlf-forward)
-    ([remap isearch-backward       ] . ctrlf-backward)
+  '(([remap isearch-forward        ] . ctrlf-forward-literal)
+    ([remap isearch-backward       ] . ctrlf-backward-literal)
     ([remap isearch-forward-regexp ] . ctrlf-forward-regexp)
     ([remap isearch-backward-regexp] . ctrlf-backward-regexp))
   "Keybindings enabled in `ctrlf-mode'. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 `ctrlf-mode' is (re-)enabled. The keys are strings or raw key
-events and the values are command symbols."
+events and the values are command symbols.
+
+These bindings are available globally in Emacs. See also
+`ctrlf-minibuffer-bindings', which defines bindings that are
+active in the minibuffer during a search."
   :type '(alist
           :key-type sexp
           :value-type function))
@@ -95,7 +117,10 @@ events and the values are command symbols."
 Rather it is an alist that is converted into a keymap just before
 entering the minibuffer. The keys are strings or raw key events
 and the values are command symbols. The keymap so constructed
-inherits from `minibuffer-local-map'."
+inherits from `minibuffer-local-map'.
+
+See also `ctrlf-mode-bindings', which defines bindings that are
+available globally in Emacs when `ctrlf-mode' is active."
   :type '(alist
           :key-type sexp
           :value-type function))
@@ -104,6 +129,82 @@ inherits from `minibuffer-local-map'."
   "Width of vertical bar to display for a zero-length match.
 This is relative to the normal width of a character."
   :type 'number)
+
+;;;;; Functions for use in configuration
+
+;; Stolen (with love) from
+;; <https://github.com/raxod502/prescient.el/blob/7fd8c3b8028da4733434940c4aac1209281bef58/prescient.el#L242-L288>.
+(defun ctrlf-split-fuzzy (input)
+  "Split INPUT string into subinputs.
+The input is split on spaces, but a sequence of two or more
+spaces has one space removed and is treated literally rather than
+as a subinput delimiter."
+  (if (string-match-p "\\` *\\'" input)
+      ;; If string is zero or one spaces, then we match everything.
+      ;; Return an empty sub-input list.
+      (unless (<= (length input) 1)
+        ;; Otherwise, the number of spaces should be reduced by one.
+        (list (substring input 1)))
+    ;; Trim off a single space from the beginning and end, if present.
+    ;; Otherwise, they would generate empty splits and cause us to
+    ;; match literal whitespace.
+    (setq input (replace-regexp-in-string
+                 "\\` ?\\(.*?\\) ?\\'" "\\1" input 'fixedcase))
+    (let ((splits (split-string input " "))
+          (subinput "")
+          (token-found nil)
+          (subqueries nil))
+      (dolist (split splits)
+        ;; Check for empty split, meaning two consecutive spaces in
+        ;; the original input.
+        (if (string-empty-p split)
+            (progn
+              ;; Consecutive spaces mean literal spaces in the
+              ;; subinput under construction.
+              (setq subinput (concat subinput " "))
+              ;; If we get a non-empty split, append it to the
+              ;; subinput rather than parsing it as another subinput.
+              (setq token-found nil))
+          ;; Possibly add the collected string as a new subinput.
+          (when token-found
+            (push subinput subqueries)
+            (setq subinput ""))
+          ;; Either start a new subinput or append to the existing one
+          ;; (in the case of previously seeing an empty split).
+          (setq subinput (concat subinput split))
+          ;; If another non-empty split is found, it's a separate
+          ;; subinput.
+          (setq token-found t)))
+      ;; Check if we hit the end of the string while still
+      ;; constructing a subinput, and handle.
+      (unless (string-empty-p subinput)
+        (push subinput subqueries))
+      ;; We added the subqueries in reverse order.
+      (nreverse subqueries))))
+
+(defun ctrlf-translate-fuzzy-literal (input)
+  "Build a fuzzy-matching regexp from literal INPUT.
+See `ctrlf-split-fuzzy' for how INPUT is split into subinputs.
+Each subinput is quoted and the results are joined with \".*\"."
+  (string-join (mapcar #'regexp-quote (ctrlf-split-fuzzy input)) ".*"))
+
+(defun ctrlf-translate-fuzzy-regexp (input)
+  "Build a fuzzy-matching regexp from regexp INPUT.
+See `ctrlf-split-fuzzy' for how INPUT is split into subinputs.
+The subinputs are joined with \".*\"."
+  (string-join (ctrlf-split-fuzzy input) ".*"))
+
+(defun ctrlf-no-uppercase-literal-p (input)
+  "Return non-nil if literal INPUT contains no uppercase letters."
+  (require 'isearch)
+  (isearch-no-upper-case-p input nil))
+
+(defun ctrlf-no-uppercase-regexp-p (input)
+  "Return non-nil if regexp INPUT contains no uppercase letters."
+  (require 'isearch)
+  (isearch-no-upper-case-p input t))
+
+;;;;; Faces
 
 (defface ctrlf-highlight-active
   '((t :inherit isearch))
@@ -117,160 +218,50 @@ This is relative to the normal width of a character."
   '((t :inherit highlight))
   "Face used to highlight current line.")
 
+;;;;; Variables
+
 (defvar ctrlf-search-history nil
   "History of searches that were not canceled.")
+
+;;;; Session variables
+;;;;; Invariant session variables
 
 (defvar ctrlf--active-p nil
   "Non-nil means we're currently performing a search.
 This is dynamically bound by CTRLF commands.")
 
-(defvar ctrlf--backward-p nil
-  "Non-nil means we are currently searching backward.
-Nil means we are currently searching forward.")
+(defvar ctrlf--starting-point nil
+  "Value of point from when search was started.")
+
+(defvar ctrlf--minibuffer nil
+  "The minibuffer being used for search.")
+
+;;;;; Non-invariant session variables
 
 (defvar ctrlf--style nil
   "Current search style.")
 
-(defvar ctrlf--last-input nil
-  "Previous user input, or nil if none yet.")
+(defvar ctrlf--backward-p nil
+  "Non-nil means we are currently searching backward.
+Nil means we are currently searching forward.")
 
-(defvar ctrlf--starting-point nil
-  "Value of point from when search was started.")
+(defvar ctrlf--case-fold-search :auto
+  "Whether `case-fold-search' is enabled in the current CTRLF session.
+Value `:auto' means to guess based on the current search query.")
 
 (defvar ctrlf--current-starting-point nil
   "Value of point from which to search.")
 
-(defvar ctrlf--minibuffer nil
-  "The minibuffer being used for search.")
+(defvar ctrlf--match-bounds nil
+  "Cons cell of current match beginning and end, or nil if no match.")
+
+;;;; Overlay shenanigans
 
 (defvar ctrlf--persistent-overlays nil
   "List of persistent overlays used by CTRLF.")
 
 (defvar ctrlf--transient-overlays nil
   "List of transient overlays used by CTRLF.")
-
-(defvar ctrlf--match-bounds nil
-  "Cons cell of current match beginning and end, or nil if no match.")
-
-(defvar ctrlf--case-fold-search :auto
-  "Whether `case-fold-search' is enabled in the current CTRLF session.
-Value `:auto' means to guess based on the current search query.")
-
-(defvar ctrlf--case-fold-search-toggled nil
-  "Whether `case-fold-search' has been toggled, so a message should be shown.")
-
-(defvar ctrlf--case-fold-search-last-guessed nil
-  "Last guessed value of `case-fold-search'.")
-
-(defvar ctrlf--final-window-start nil
-  "Original buffer's `window-start' just before exiting minibuffer.
-For some reason this gets trashed when exiting the minibuffer, so
-we restore it to keep the scroll position consistent.
-
-I have literally no idea why this is needed.")
-
-(defun ctrlf--copy-properties (s1 s2)
-  "Return a copy of S1 with properties from S2 added.
-Assume that S2 has the same properties throughout."
-  (apply #'propertize s1 (text-properties-at 0 s2)))
-
-;; Stolen (with love) from
-;; <https://github.com/raxod502/prescient.el/blob/7fd8c3b8028da4733434940c4aac1209281bef58/prescient.el#L242-L288>.
-(defun ctrlf--fuzzy-split (query)
-  "Split QUERY string into sub-queries.
-The query is split on spaces, but a sequence of two or more
-spaces has one space removed and is treated literally rather than
-as a sub-query delimiter."
-  (if (string-match-p "\\` *\\'" query)
-      ;; If string is zero or one spaces, then we match everything.
-      ;; Return an empty subquery list.
-      (unless (<= (length query) 1)
-        ;; Otherwise, the number of spaces should be reduced by one.
-        (list (substring query 1)))
-    ;; Trim off a single space from the beginning and end, if present.
-    ;; Otherwise, they would generate empty splits and cause us to
-    ;; match literal whitespace.
-    (setq query (replace-regexp-in-string
-                 "\\` ?\\(.*?\\) ?\\'" "\\1" query 'fixedcase))
-    (let ((splits (split-string query " "))
-          (subquery "")
-          (token-found nil)
-          (subqueries nil))
-      (dolist (split splits)
-        ;; Check for empty split, meaning two consecutive spaces in
-        ;; the original query.
-        (if (string-empty-p split)
-            (progn
-              ;; Consecutive spaces mean literal spaces in the
-              ;; subquery under construction.
-              (setq subquery (concat subquery " "))
-              ;; If we get a non-empty split, append it to the
-              ;; subquery rather than parsing it as another subquery.
-              (setq token-found nil))
-          ;; Possibly add the collected string as a new subquery.
-          (when token-found
-            (push subquery subqueries)
-            (setq subquery ""))
-          ;; Either start a new subquery or append to the existing one
-          ;; (in the case of previously seeing an empty split).
-          (setq subquery (concat subquery split))
-          ;; If another non-empty split is found, it's a separate
-          ;; subquery.
-          (setq token-found t)))
-      ;; Check if we hit the end of the string while still
-      ;; constructing a subquery, and handle.
-      (unless (string-empty-p subquery)
-        (push subquery subqueries))
-      ;; We added the subqueries in reverse order.
-      (nreverse subqueries))))
-
-(defun ctrlf--fuzzy-translate (str)
-  "Translate the literal input STR to a fuzzy regexp.
-A single space character is translated into \".*\", while N
-spaces (N >= 2) are translated in to N-1 spaces. The groups
-divided by \".*\" are quoted."
-  (string-join (mapcar #'regexp-quote (ctrlf--fuzzy-split str)) ".*"))
-
-(defun ctrlf--fuzzy-regexp-translate (str)
-  "Translate the user inputted regexp STR to a fuzzy regexp.
-A single space character is translated into \".*\", while N
-spaces (N >= 2) are translated in to N-1 spaces."
-  (string-join (ctrlf--fuzzy-split str) ".*"))
-
-(defun ctrlf-no-uppercase-literal-p (query)
-  "Return non-nil if literal QUERY contains no uppercase letters."
-  (require 'isearch)
-  (isearch-no-upper-case-p query nil))
-
-(defun ctrlf-no-uppercase-regexp-p (query)
-  "Return non-nil if regexp QUERY contains no uppercase letters."
-  (require 'isearch)
-  (isearch-no-upper-case-p query t))
-
-(defun ctrlf--finalize ()
-  "Perform cleanup that has to happen after the minibuffer is exited."
-  (remove-hook 'post-command-hook #'ctrlf--finalize)
-  (unless (= (point) ctrlf--starting-point)
-    (push-mark ctrlf--starting-point))
-  (set-window-start nil ctrlf--final-window-start))
-
-(defun ctrlf--minibuffer-exit-hook ()
-  "Clean up CTRLF from minibuffer and self-destruct this hook."
-  (setq ctrlf--final-window-start (window-start (minibuffer-selected-window)))
-  (ctrlf--clear-transient-overlays)
-  (ctrlf--clear-persistent-overlays)
-  (remove-hook
-   'post-command-hook #'ctrlf--minibuffer-post-command-hook 'local)
-  (remove-hook
-   'before-change-functions #'ctrlf--minibuffer-before-change-function 'local)
-  (remove-hook 'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook 'local)
-  (add-hook 'post-command-hook #'ctrlf--finalize))
-
-(defvar ctrlf--persist-messages nil
-  "Whether `ctrlf--message' will show persistent messages.
-If non-nil, then messages will persist until the next
-recomputation of CTRLF's overlays. Persistent messages will be
-shown to the left of transient messages.")
 
 (defun ctrlf--fix-overlay-cursor-props ()
   "Fix the `cursor' properties on minibuffer overlays.
@@ -294,7 +285,7 @@ Why? Because <https://github.com/raxod502/ctrlf/issues/3>."
   "Apply `ctrlf--fix-overlay-cursor-props' after `minibuffer-message'.
 
 This is an `:around' advice for `minibuffer-message'. FUNC and
-ARGS are standard for the advice."
+ARGS the original function and its arguments, as usual."
   (cl-letf* ((sit-for (symbol-function #'sit-for))
              ((symbol-function #'sit-for)
               (lambda (&rest args)
@@ -304,6 +295,13 @@ ARGS are standard for the advice."
                 (ctrlf--fix-overlay-cursor-props)
                 (apply sit-for args))))
     (apply func args)))
+
+(defvar ctrlf--message-persist-p nil
+  "Whether `ctrlf--message' will show persistent messages.
+If non-nil, then messages will persist until the next
+recomputation of CTRLF's overlays. Otherwise, they will only last
+until the next interactive command. Persistent messages will be
+shown to the left of transient messages.")
 
 (defun ctrlf--message (format &rest args)
   "Display a transient message in the minibuffer.
@@ -316,7 +314,7 @@ mess."
     ;; Setting REAR-ADVANCE:
     ;; <https://github.com/raxod502/ctrlf/issues/4>
     (let ((ol (make-overlay (point-max) (point-max) nil nil 'rear-advance)))
-      (if ctrlf--persist-messages
+      (if ctrlf--message-persist-p
           (push ol ctrlf--persistent-overlays)
         (push ol ctrlf--transient-overlays))
       ;; Some of this is borrowed from `minibuffer-message'.
@@ -327,8 +325,20 @@ mess."
          ol 'priority
          ;; Prioritize our messages over ones generated by Emacs, and
          ;; persistent messages over transient ones.
-         (if ctrlf--persist-messages 2 1))))
+         (if ctrlf--message-persist-p 2 1))))
     (ctrlf--fix-overlay-cursor-props)))
+
+(defun ctrlf--clear-transient-overlays ()
+  "Delete the transient overlays created by CTRLF."
+  (while ctrlf--transient-overlays
+    (delete-overlay (pop ctrlf--transient-overlays))))
+
+(defun ctrlf--clear-persistent-overlays ()
+  "Delete the persistent overlays created by CTRLF."
+  (while ctrlf--persistent-overlays
+    (delete-overlay (pop ctrlf--persistent-overlays))))
+
+;;;; Search primitive
 
 (cl-defun ctrlf--search
     (query &key
@@ -375,6 +385,32 @@ non-nil."
              (point-min)))
           (funcall func query nil 'noerror)))))
 
+;;;; Main loop
+
+(defun ctrlf--minibuffer-before-change-function (&rest _)
+  "Prepare for user input."
+  ;; Clear overlays pre-emptively. See
+  ;; <https://github.com/raxod502/ctrlf/issues/1>.
+  (ctrlf--clear-transient-overlays))
+
+;;;;; Bookkeeping variables
+
+(defvar ctrlf--last-input nil
+  "Previous user input, or nil if none yet.")
+
+(defvar ctrlf--case-fold-search-toggled nil
+  "Whether `case-fold-search' has been toggled, so a message should be shown.")
+
+(defvar ctrlf--case-fold-search-last-guessed nil
+  "Last guessed value of `case-fold-search'.")
+
+;;;;; Utility functions
+
+(defun ctrlf--copy-properties (s1 s2)
+  "Return a copy of S1 with properties from S2 added.
+Assume that S2 has the same properties throughout."
+  (apply #'propertize s1 (text-properties-at 0 s2)))
+
 (defun ctrlf--prompt ()
   "Return the prompt to use in the minibuffer."
   (concat
@@ -384,21 +420,7 @@ non-nil."
    (plist-get (alist-get ctrlf--style ctrlf-style-alist) :prompt)
    ": "))
 
-(defun ctrlf--clear-transient-overlays ()
-  "Delete the transient overlays created by CTRLF."
-  (while ctrlf--transient-overlays
-    (delete-overlay (pop ctrlf--transient-overlays))))
-
-(defun ctrlf--clear-persistent-overlays ()
-  "Delete the persistent overlays created by CTRLF."
-  (while ctrlf--persistent-overlays
-    (delete-overlay (pop ctrlf--persistent-overlays))))
-
-(defun ctrlf--minibuffer-before-change-function (&rest _)
-  "Prepare for user input."
-  ;; Clear overlays pre-emptively. See
-  ;; <https://github.com/raxod502/ctrlf/issues/1>.
-  (ctrlf--clear-transient-overlays))
+;;;;; Post-command hook
 
 (defun ctrlf--minibuffer-post-command-hook ()
   "Deal with updated user input."
@@ -517,7 +539,7 @@ non-nil."
                       (setq cur-index num-matches)))))
               (with-current-buffer ctrlf--minibuffer
                 (when cur-index
-                  (let ((ctrlf--persist-messages t))
+                  (let ((ctrlf--message-persist-p t))
                     (ctrlf--message
                      "%d/%d" cur-index num-matches)))))
             ;; Highlight the active match specially, and optionally also
@@ -558,6 +580,37 @@ non-nil."
            "enabled"))
         (setq ctrlf--case-fold-search-toggled nil)))))
 
+;;;; Teardown
+
+(defvar ctrlf--final-window-start nil
+  "Original buffer's `window-start' just before exiting minibuffer.
+For some reason this gets trashed when exiting the minibuffer, so
+we restore it to keep the scroll position consistent.
+
+I have literally no idea why this is needed.")
+
+(defun ctrlf--finalize ()
+  "Perform cleanup that has to happen after the minibuffer is exited.
+And self-destruct this hook."
+  (remove-hook 'post-command-hook #'ctrlf--finalize)
+  (unless (= (point) ctrlf--starting-point)
+    (push-mark ctrlf--starting-point))
+  (set-window-start nil ctrlf--final-window-start))
+
+(defun ctrlf--minibuffer-exit-hook ()
+  "Clean up CTRLF from minibuffer and self-destruct this hook."
+  (setq ctrlf--final-window-start (window-start (minibuffer-selected-window)))
+  (ctrlf--clear-transient-overlays)
+  (ctrlf--clear-persistent-overlays)
+  (remove-hook
+   'post-command-hook #'ctrlf--minibuffer-post-command-hook 'local)
+  (remove-hook
+   'before-change-functions #'ctrlf--minibuffer-before-change-function 'local)
+  (remove-hook 'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook 'local)
+  (add-hook 'post-command-hook #'ctrlf--finalize))
+
+;;;; Main entry point
+
 (defun ctrlf--start ()
   "Start CTRLF session assuming config vars are set up already."
   (let ((keymap (make-sparse-keymap)))
@@ -588,6 +641,9 @@ non-nil."
         (read-from-minibuffer
          (ctrlf--prompt) nil keymap nil 'ctrlf-search-history
          (thing-at-point 'symbol t))))))
+
+;;;; Public functions
+;;;;; Navigation
 
 (defun ctrlf-next-match ()
   "Move to next match, if there is one. Wrap around if necessary."
@@ -673,24 +729,9 @@ Wrap around if necessary."
   ;; Force recalculation of search.
   (setq ctrlf--last-input nil))
 
-(defun ctrlf-toggle-case-fold-search ()
-  "Toggle `case-fold-search' for current CTRLF session.
-By default the appropriate value is guessed by checking whether
-the input has any uppercase letters. Toggling will fix the value,
-initially to the opposite of the guessed value for the current
-query."
-  (interactive)
-  (when (eq ctrlf--case-fold-search :auto)
-    (setq ctrlf--case-fold-search
-          ctrlf--case-fold-search-last-guessed))
-  (setq ctrlf--case-fold-search
-        (not ctrlf--case-fold-search))
-  ;; Queue a message to be displayed.
-  (setq ctrlf--case-fold-search-toggled t)
-  ;; Force recalculation of search.
-  (setq ctrlf--last-input nil))
+;;;;; Main commands
 
-(defun ctrlf--forward (style &optional preserve)
+(defun ctrlf-forward (style &optional preserve)
   "Search forward using given STYLE (see `ctrlf-style-alist').
 If already in a search, go to next candidate, or if no input then
 insert the previous search string. PRESERVE non-nil means don't
@@ -710,7 +751,7 @@ change the search style if already in a search."
       (setq ctrlf--backward-p nil)
       (ctrlf--start))))
 
-(defun ctrlf--backward (style &optional preserve)
+(defun ctrlf-backward (style &optional preserve)
   "Search backward using given STYLE (see `ctrlf-style-alist').
 If already in a search, go to previous candidate, or if no input
 then insert the previous search string. PRESERVE non-nil means
@@ -730,69 +771,35 @@ don't change the search style if already in a search."
       (setq ctrlf--backward-p t)
       (ctrlf--start))))
 
-(defun ctrlf-forward (&optional arg)
-  "Search forward for literal string.
-If already in a search, go to next candidate, or if no input then
-insert the previous search string. If in a non-literal search,
-change back to literal search if prefix ARG is provided."
-  (interactive "P")
-  (ctrlf--forward 'literal (null arg)))
+;;;;; Utilities
 
-(defun ctrlf-backward (&optional arg)
-  "Search backward for literal string.
-If already in a search, go to previous candidate, or if no input
-then insert the previous search string. If in a non-literal
-search, change back to literal search if prefix ARG is provided."
-  (interactive "P")
-  (ctrlf--backward 'literal (null arg)))
-
-(defun ctrlf-forward-regexp ()
-  "Search forward for regexp.
-If already in a search, go to next candidate, or if no input then
-insert the previous search string. If in a non-regexp search,
-change back to regexp search."
+(defun ctrlf-toggle-case-fold-search ()
+  "Toggle `case-fold-search' for current CTRLF session.
+By default the appropriate value is guessed by checking whether
+the input has any uppercase letters. Toggling will fix the value,
+initially to the opposite of the guessed value for the current
+query."
   (interactive)
-  (ctrlf--forward 'regexp))
+  (when (eq ctrlf--case-fold-search :auto)
+    (setq ctrlf--case-fold-search
+          ctrlf--case-fold-search-last-guessed))
+  (setq ctrlf--case-fold-search
+        (not ctrlf--case-fold-search))
+  ;; Queue a message to be displayed.
+  (setq ctrlf--case-fold-search-toggled t)
+  ;; Force recalculation of search.
+  (setq ctrlf--last-input nil))
 
-(defun ctrlf-backward-regexp ()
-  "Search backward for regexp.
-If already in a search, go to previous candidate, or if no input
-then insert the previous search string. If in a non-regexp
-search, change back to regexp search."
+(defun ctrlf-recenter-top-bottom ()
+  "Display current match in the center of the window (by default).
+Successive calls, or calls with prefix argument, may have
+different behavior, for which see `recenter-top-bottom'."
   (interactive)
-  (ctrlf--backward 'regexp))
+  (with-selected-window
+      (minibuffer-selected-window)
+    (recenter-top-bottom)))
 
-(defun ctrlf-forward-fuzzy ()
-  "Fuzzy search forward for literal string.
-If already in a search, go to next candidate, or if no input then
-insert the previous search string. If in a non-fuzzy search,
-change back to fuzzy search."
-  (interactive)
-  (ctrlf--forward 'fuzzy))
-
-(defun ctrlf-backward-fuzzy ()
-  "Fuzzy search backward for literal string.
-If already in a search, go to previous candidate, or if no input
-then insert the previous search string. If in a non-fuzzy search,
-change back to fuzzy search."
-  (interactive)
-  (ctrlf--backward 'fuzzy))
-
-(defun ctrlf-forward-fuzzy-regexp ()
-  "Fuzzy search forward for literal string.
-If already in a search, go to next candidate, or if no input then
-insert the previous search string. If in a non-fuzzy-regexp
-search, change back to fuzzy-regexp search."
-  (interactive)
-  (ctrlf--forward 'fuzzy-regexp))
-
-(defun ctrlf-backward-fuzzy-regexp ()
-  "Fuzzy search backward for literal string.
-If already in a search, go to previous candidate, or if no input
-then insert the previous search string. If in a non-fuzzy-regexp
-search, change back to fuzzy-regexp search."
-  (interactive)
-  (ctrlf--backward 'fuzzy-regexp))
+;;;;; Exit
 
 (defun ctrlf-cancel ()
   "Exit search, returning point to original position."
@@ -804,14 +811,73 @@ search, change back to fuzzy-regexp search."
   (redisplay)
   (abort-recursive-edit))
 
-(defun ctrlf-recenter-top-bottom ()
-  "Display current match in the center of the window (by default).
-Successive calls, or calls with prefix argument, may have
-different behavior, for which see `recenter-top-bottom'."
+;;;;; Main-command wrappers for built-in styles
+
+(defun ctrlf-forward-literal (&optional arg)
+  "Search forward for literal string.
+If already in a search, go to next candidate, or if no input then
+insert the previous search string. If in a non-literal search,
+change back to literal search if prefix ARG is provided."
+  (interactive "P")
+  (ctrlf-forward 'literal (null arg)))
+
+(defun ctrlf-backward-literal (&optional arg)
+  "Search backward for literal string.
+If already in a search, go to previous candidate, or if no input
+then insert the previous search string. If in a non-literal
+search, change back to literal search if prefix ARG is provided."
+  (interactive "P")
+  (ctrlf-backward 'literal (null arg)))
+
+(defun ctrlf-forward-regexp ()
+  "Search forward for regexp.
+If already in a search, go to next candidate, or if no input then
+insert the previous search string. If in a non-regexp search,
+change back to regexp search."
   (interactive)
-  (with-selected-window
-      (minibuffer-selected-window)
-    (recenter-top-bottom)))
+  (ctrlf-forward 'regexp))
+
+(defun ctrlf-backward-regexp ()
+  "Search backward for regexp.
+If already in a search, go to previous candidate, or if no input
+then insert the previous search string. If in a non-regexp
+search, change back to regexp search."
+  (interactive)
+  (ctrlf-backward 'regexp))
+
+(defun ctrlf-forward-fuzzy ()
+  "Fuzzy search forward for literal string.
+If already in a search, go to next candidate, or if no input then
+insert the previous search string. If in a non-fuzzy search,
+change back to fuzzy search."
+  (interactive)
+  (ctrlf-forward 'fuzzy))
+
+(defun ctrlf-backward-fuzzy ()
+  "Fuzzy search backward for literal string.
+If already in a search, go to previous candidate, or if no input
+then insert the previous search string. If in a non-fuzzy search,
+change back to fuzzy search."
+  (interactive)
+  (ctrlf-backward 'fuzzy))
+
+(defun ctrlf-forward-fuzzy-regexp ()
+  "Fuzzy search forward for literal string.
+If already in a search, go to next candidate, or if no input then
+insert the previous search string. If in a non-fuzzy-regexp
+search, change back to fuzzy-regexp search."
+  (interactive)
+  (ctrlf-forward 'fuzzy-regexp))
+
+(defun ctrlf-backward-fuzzy-regexp ()
+  "Fuzzy search backward for literal string.
+If already in a search, go to previous candidate, or if no input
+then insert the previous search string. If in a non-fuzzy-regexp
+search, change back to fuzzy-regexp search."
+  (interactive)
+  (ctrlf-backward 'fuzzy-regexp))
+
+;;;; Minor mode
 
 (defvar ctrlf--keymap (make-sparse-keymap)
   "Keymap for `ctrlf-mode'. Populated when mode is enabled.
