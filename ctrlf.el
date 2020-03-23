@@ -519,14 +519,6 @@ later (this should be used at the end of the search)."
             (with-selected-window
                 (minibuffer-selected-window)
               (recenter)))
-          ;; Force redisplay to make sure the window bounds are
-          ;; computed correctly, which we need to determine which
-          ;; parts of the buffer to passively highlight. But make sure
-          ;; that we do redisplay before clearing any overlays, so
-          ;; that all the overlay modifications happen between
-          ;; redisplays. Otherwise the user can see a partial set of
-          ;; overlays for a split second.
-          (redisplay)
           (ctrlf--clear-persistent-overlays)
           (when ctrlf--match-bounds
             ;; Make sure the match is visible. See:
@@ -537,11 +529,31 @@ later (this should be used at the end of the search)."
             ;; If there was a match, find all the other matches in the
             ;; buffer. Count them and highlight the ones that appear
             ;; in the window. Display that info in the minibuffer.
-            (let ((start (window-start (minibuffer-selected-window)))
-                  (end (window-end (minibuffer-selected-window)))
-                  (cur-point (point))
-                  (num-matches 0)
-                  (cur-index nil))
+            ;;
+            ;; You might think we'd want to use `window-start' and
+            ;; `window-end' to determine which matches to passively
+            ;; highlight. And you'd be right... if those functions
+            ;; actually returned correct values. Unfortunately, they
+            ;; return the values that *were* correct at the time of
+            ;; the last redisplay, which means since we moved point we
+            ;; would need to force a redisplay to get the right
+            ;; values. Doing that leads to
+            ;; <https://github.com/raxod502/ctrlf/issues/18>, so I
+            ;; came up with the workaround of just being conservative
+            ;; and highlighting a little more than we need, to be sure
+            ;; that we get everything necessary, without having to
+            ;; highlight the whole buffer which would be very slow.
+            (let* ((window-height (window-body-height
+                                   (minibuffer-selected-window)))
+                   (start (save-excursion
+                            (forward-line (- window-height))
+                            (point)))
+                   (end (save-excursion
+                          (forward-line window-height)
+                          (point)))
+                   (cur-point (point))
+                   (num-matches 0)
+                   (cur-index nil))
               (save-excursion
                 (goto-char (point-min))
                 (cl-block nil
