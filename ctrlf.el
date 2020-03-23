@@ -404,6 +404,9 @@ non-nil."
 (defvar ctrlf--case-fold-search-last-guessed nil
   "Last guessed value of `case-fold-search'.")
 
+(defvar ctrlf--opened-overlays nil
+  "List of overlays that were temporarily made visible to show matches.")
+
 ;;;;; Utility functions
 
 (defun ctrlf--copy-properties (s1 s2)
@@ -419,6 +422,41 @@ Assume that S2 has the same properties throughout."
    " "
    (plist-get (alist-get ctrlf--style ctrlf-style-alist) :prompt)
    ": "))
+
+;;;;;; Invisible overlay management
+
+(defun ctrlf--restore-all-invisible-overlays ()
+  "Restore any overlays that were previously disabled."
+  (while ctrlf--opened-overlays
+    (let ((ol (pop ctrlf--opened-overlays)))
+      (if-let ((func (overlay-get ol 'isearch-open-invisible-temporary)))
+          (funcall func t)
+        (overlay-put ol 'invisible (overlay-get ol 'ctrlf-orig-invisible))
+        ;; I don't see a function for removing an overlay property, and
+        ;; Isearch does it by setting the property to nil, so I assume
+        ;; it's fine.
+        (overlay-put ol 'ctrlf-orig-invisible nil)))))
+
+(defun ctrlf--disable-invisible-overlays-at-point (&optional permanently)
+  "Disable any overlays that are currently hiding point.
+PERMANENTLY non-nil means the overlays will not be restored
+later (this should be used at the end of the search)."
+  (when ctrlf--match-bounds
+    (dolist (ol (overlays-in (car ctrlf--match-bounds)
+                             (cdr ctrlf--match-bounds)))
+      (when (and (invisible-p (overlay-get ol 'invisible))
+                 ;; If this function is missing, then we can't open
+                 ;; the overlay permanently because we don't know how
+                 ;; to do it properly. Hey, don't ask me, I'm just
+                 ;; following Isearch.
+                 (overlay-get ol 'isearch-open-invisible))
+        (if permanently
+            (funcall (overlay-get ol 'isearch-open-invisible) ol)
+          (push ol ctrlf--opened-overlays)
+          (if-let ((func (overlay-get ol 'isearch-open-invisible-temporary)))
+              (funcall func nil)
+            (overlay-put ol 'ctrlf-orig-invisible (overlay-get ol 'invisible))
+            (overlay-put ol 'invisible nil)))))))
 
 ;;;;; Post-command hook
 
@@ -491,6 +529,11 @@ Assume that S2 has the same properties throughout."
           (redisplay)
           (ctrlf--clear-persistent-overlays)
           (when ctrlf--match-bounds
+            ;; Make sure the match is visible. See:
+            ;; <https://github.com/raxod502/ctrlf/issues/23>
+            ;; <https://github.com/abo-abo/swiper/blob/64f05f4735bba8b708bc12cfc2cbfb7fb7706787/swiper.el#L878-L885>
+            (ctrlf--restore-all-invisible-overlays)
+            (ctrlf--disable-invisible-overlays-at-point)
             ;; If there was a match, find all the other matches in the
             ;; buffer. Count them and highlight the ones that appear
             ;; in the window. Display that info in the minibuffer.
@@ -602,6 +645,9 @@ And self-destruct this hook."
   (setq ctrlf--final-window-start (window-start (minibuffer-selected-window)))
   (ctrlf--clear-transient-overlays)
   (ctrlf--clear-persistent-overlays)
+  (with-current-buffer (window-buffer (minibuffer-selected-window))
+    (ctrlf--restore-all-invisible-overlays)
+    (ctrlf--disable-invisible-overlays-at-point 'permanently))
   (remove-hook
    'post-command-hook #'ctrlf--minibuffer-post-command-hook 'local)
   (remove-hook
