@@ -117,7 +117,8 @@ active in the minibuffer during a search."
     ("TAB"       . ctrlf-next-match)
     ("S-TAB"     . ctrlf-previous-match)
     ("<backtab>" . ctrlf-previous-match)
-    ("C-o c"     . ctrlf-toggle-case-fold-search))
+    ("C-o c"     . ctrlf-toggle-case-fold-search)
+    ("C-o s"     . ctrlf-change-search-style))
   "Keybindings enabled in minibuffer during search. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 entering the minibuffer. The keys are strings or raw key events
@@ -901,6 +902,19 @@ don't change the search style if already in a search."
       (ctrlf--start))))
 
 ;;;;; Utilities
+
+(defun ctrlf-change-search-style (style)
+  "Switch to given search STYLE for current CTRLF session.
+Interactively, select from the list of all defined styles."
+  (interactive
+   (list
+    (intern
+     (let ((enable-recursive-minibuffers t))
+       (completing-read
+        "Style: "
+        (mapcar #'symbol-name (map-keys ctrlf-style-alist)))))))
+  (setq ctrlf--style style)
+  (setq ctrlf--last-input nil))
 
 (defun ctrlf-toggle-case-fold-search ()
   "Toggle `case-fold-search' for current CTRLF session.
