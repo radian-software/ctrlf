@@ -119,9 +119,6 @@ active in the minibuffer during a search."
     ([remap scroll-up-command]              . ctrlf-next-page)
     ([remap scroll-down-command]            . ctrlf-previous-page)
     ([remap recenter-top-bottom]            . ctrlf-recenter-top-bottom)
-    ("TAB"       . ctrlf-next-match)
-    ("S-TAB"     . ctrlf-previous-match)
-    ("<backtab>" . ctrlf-previous-match)
     ("C-o c"     . ctrlf-toggle-case-fold-search)
     ("C-o s"     . ctrlf-change-search-style))
   "Keybindings enabled in minibuffer during search. This is not a keymap.
