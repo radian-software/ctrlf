@@ -32,6 +32,7 @@
 ;;;; Libraries
 
 (require 'cl-lib)
+(require 'hl-line)
 (require 'map)
 (require 'subr-x)
 (require 'thingatpt)
