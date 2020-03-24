@@ -111,7 +111,7 @@ active in the minibuffer during a search."
           :value-type function)
   :set (lambda (var val)
          (set var val)
-         (when ctrlf-mode
+         (when (bound-and-true-p ctrlf-mode)
            (ctrlf-mode +1))))
 
 (defcustom ctrlf-minibuffer-bindings
