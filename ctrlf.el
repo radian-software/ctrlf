@@ -84,6 +84,7 @@ lists with the following keys (all mandatory):
                             (const :translator) function
                             (const :case-fold) function)))
 
+;;;###autoload
 (defcustom ctrlf-mode-bindings
   '(([remap isearch-forward        ] . ctrlf-forward-literal)
     ([remap isearch-backward       ] . ctrlf-backward-literal)
@@ -956,6 +957,7 @@ different behavior, for which see `recenter-top-bottom'."
 
 ;;;;; Main-command wrappers for built-in styles
 
+;;;###autoload
 (defun ctrlf-forward-literal (&optional arg)
   "Search forward for literal string.
 If already in a search, go to next candidate, or if no input then
@@ -964,6 +966,7 @@ change back to literal search if prefix ARG is provided."
   (interactive "P")
   (ctrlf-forward 'literal (null arg)))
 
+;;;###autoload
 (defun ctrlf-backward-literal (&optional arg)
   "Search backward for literal string.
 If already in a search, go to previous candidate, or if no input
@@ -972,6 +975,7 @@ search, change back to literal search if prefix ARG is provided."
   (interactive "P")
   (ctrlf-backward 'literal (null arg)))
 
+;;;###autoload
 (defun ctrlf-forward-regexp ()
   "Search forward for regexp.
 If already in a search, go to next candidate, or if no input then
@@ -980,6 +984,7 @@ change back to regexp search."
   (interactive)
   (ctrlf-forward 'regexp))
 
+;;;###autoload
 (defun ctrlf-backward-regexp ()
   "Search backward for regexp.
 If already in a search, go to previous candidate, or if no input
@@ -1022,33 +1027,36 @@ search, change back to fuzzy-regexp search."
 
 ;;;; Minor mode
 
+;;;###autoload
 (defvar ctrlf--keymap (make-sparse-keymap)
   "Keymap for `ctrlf-mode'. Populated when mode is enabled.
 See `ctrlf-mode-bindings'.")
 
 ;;;###autoload
-(define-minor-mode ctrlf-mode
-  "Minor mode to use CTRLF in place of Isearch.
+(progn
+  (define-minor-mode ctrlf-mode
+    "Minor mode to use CTRLF in place of Isearch.
 See `ctrlf-mode-bindings' to customize."
-  :global t
-  :keymap ctrlf--keymap
-  (when ctrlf-mode
-    (ctrlf-mode -1)
-    (setq ctrlf-mode t)
-    ;; Hack to clear out keymap. Presumably there's a `clear-keymap'
-    ;; function lying around somewhere...?
-    (setcdr ctrlf--keymap nil)
-    (map-apply
-     (lambda (key cmd)
-       (when (stringp key)
-         (setq key (kbd key)))
-       (define-key ctrlf--keymap key cmd))
-     ctrlf-mode-bindings))
-  (if ctrlf-mode
-      (advice-add #'minibuffer-message :around
-                  #'ctrlf--minibuffer-message-condense)
-    (advice-remove #'minibuffer-message
-                   #'ctrlf--minibuffer-message-condense)))
+    :global t
+    :keymap ctrlf--keymap
+    (when ctrlf-mode
+      (ctrlf-mode -1)
+      (setq ctrlf-mode t)
+      ;; Hack to clear out keymap. Presumably there's a `clear-keymap'
+      ;; function lying around somewhere...?
+      (setcdr ctrlf--keymap nil)
+      (map-apply
+       (lambda (key cmd)
+         (when (stringp key)
+           (setq key (kbd key)))
+         (define-key ctrlf--keymap key cmd))
+       ctrlf-mode-bindings))
+    (with-eval-after-load 'ctrlf
+      (if ctrlf-mode
+          (advice-add #'minibuffer-message :around
+                      #'ctrlf--minibuffer-message-condense)
+        (advice-remove #'minibuffer-message
+                       #'ctrlf--minibuffer-message-condense)))))
 
 ;;;; Closing remarks
 
