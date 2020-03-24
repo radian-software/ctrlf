@@ -100,7 +100,11 @@ These bindings are available globally in Emacs. See also
 active in the minibuffer during a search."
   :type '(alist
           :key-type sexp
-          :value-type function))
+          :value-type function)
+  :set (lambda (var val)
+         (set var val)
+         (when ctrlf-mode
+           (ctrlf-mode +1))))
 
 (defcustom ctrlf-minibuffer-bindings
   '(([remap abort-recursive-edit]           . ctrlf-cancel)
