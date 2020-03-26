@@ -1074,6 +1074,7 @@ See `ctrlf-mode-bindings' to customize."
 ;; checkdoc-verb-check-experimental-flag: nil
 ;; indent-tabs-mode: nil
 ;; outline-regexp: ";;;;* "
+;; sentence-end-double-space: nil
 ;; End:
 
 ;;; ctrlf.el ends here
