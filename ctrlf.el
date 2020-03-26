@@ -213,12 +213,10 @@ The subinputs are joined with \".*\"."
 
 (defun ctrlf-no-uppercase-literal-p (input)
   "Return non-nil if literal INPUT contains no uppercase letters."
-  (require 'isearch)
   (isearch-no-upper-case-p input nil))
 
 (defun ctrlf-no-uppercase-regexp-p (input)
   "Return non-nil if regexp INPUT contains no uppercase letters."
-  (require 'isearch)
   (isearch-no-upper-case-p input t))
 
 ;;;;; Faces
