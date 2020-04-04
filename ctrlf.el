@@ -1048,8 +1048,6 @@ See `ctrlf-mode-bindings' to customize."
     :global t
     :keymap ctrlf--keymap
     (when ctrlf-mode
-      (ctrlf-mode -1)
-      (setq ctrlf-mode t)
       ;; Hack to clear out keymap. Presumably there's a `clear-keymap'
       ;; function lying around somewhere...?
       (setcdr ctrlf--keymap nil)
