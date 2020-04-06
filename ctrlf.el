@@ -900,7 +900,7 @@ don't change the search style if already in a search."
     (setq preserve nil))
   (let ((inhibit-history (or (and (not preserve)
                                   (not (eq style ctrlf--style)))
-                             (not (eq t     ctrlf--backward-p)))))
+                             (not      (eq t     ctrlf--backward-p)))))
     (unless preserve
       (setq ctrlf--style style))
     (if ctrlf--active-p
