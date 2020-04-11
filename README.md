@@ -8,7 +8,8 @@ for single-buffer text search in Emacs, replacing packages such as
 
 <!-- toc -->
 
-- [Getting started](#getting-started)
+- [Installation](#installation)
+- [Usage](#usage)
 - [User guide](#user-guide)
   * [Search flow](#search-flow)
   * [Customization](#customization)
@@ -24,16 +25,20 @@ for single-buffer text search in Emacs, replacing packages such as
 
 <!-- tocstop -->
 
-## Getting started
+## Installation
 
-CTRLF is not currently listed on MELPA. Therefore, the best way is to
-install it is with
+CTRLF is [available as a package on MELPA](https://melpa.org/#/ctrlf).
+The easiest way to install this package is using
 [`straight.el`](https://github.com/raxod502/straight.el):
 
 ```elisp
-(straight-use-package
-  '(ctrlf :host github :repo "raxod502/ctrlf"))
+(straight-use-package 'ctrlf)
 ```
+
+However, you may install using any other package manager if you
+prefer.
+
+## Usage
 
 To enable CTRLF, simply add to your init-file:
 
