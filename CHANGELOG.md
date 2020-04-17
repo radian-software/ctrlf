@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
+## Unreleased
+### Enhancements
+* It is now possible to use the standard Isearch bindings within the
+  minibuffer to search the current user input and the minibuffer
+  history. Note that this functionality is not compatible with
+  Selectrum. See [#41].
+
+[#41]: https://github.com/raxod502/ctrlf/issues/41
+
 ## 1.0 (released 2020-03-31)
 ### Added
 * Package `ctrlf`

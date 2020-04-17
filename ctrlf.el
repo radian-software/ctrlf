@@ -971,18 +971,26 @@ different behavior, for which see `recenter-top-bottom'."
   "Search forward for literal string.
 If already in a search, go to next candidate, or if no input then
 insert the previous search string. If in a non-literal search,
-change back to literal search if prefix ARG is provided."
+change back to literal search if prefix ARG is provided. If in
+the minibuffer but not in a search already, run command
+`isearch-forward' instead."
   (interactive "P")
-  (ctrlf-forward 'literal (null arg)))
+  (if (and (window-minibuffer-p) (not ctrlf--active-p))
+      (isearch-forward)
+    (ctrlf-forward 'literal (null arg))))
 
 ;;;###autoload
 (defun ctrlf-backward-literal (&optional arg)
   "Search backward for literal string.
 If already in a search, go to previous candidate, or if no input
 then insert the previous search string. If in a non-literal
-search, change back to literal search if prefix ARG is provided."
+search, change back to literal search if prefix ARG is provided.
+If in the minibuffer but not in a search already, run
+`isearch-backward' instead."
   (interactive "P")
-  (ctrlf-backward 'literal (null arg)))
+  (if (and (window-minibuffer-p) (not ctrlf--active-p))
+      (isearch-backward)
+    (ctrlf-backward 'literal (null arg))))
 
 ;;;###autoload
 (defun ctrlf-forward-regexp ()
@@ -991,7 +999,9 @@ If already in a search, go to next candidate, or if no input then
 insert the previous search string. If in a non-regexp search,
 change back to regexp search."
   (interactive)
-  (ctrlf-forward 'regexp))
+  (if (and (window-minibuffer-p) (not ctrlf--active-p))
+      (isearch-forward-regexp)
+    (ctrlf-forward 'regexp)))
 
 ;;;###autoload
 (defun ctrlf-backward-regexp ()
@@ -1000,7 +1010,9 @@ If already in a search, go to previous candidate, or if no input
 then insert the previous search string. If in a non-regexp
 search, change back to regexp search."
   (interactive)
-  (ctrlf-backward 'regexp))
+  (if (and (window-minibuffer-p) (not ctrlf--active-p))
+      (isearch-backward-regexp)
+    (ctrlf-backward 'regexp)))
 
 (defun ctrlf-forward-fuzzy ()
   "Fuzzy search forward for literal string.
