@@ -294,11 +294,5 @@ window.
 
 ## Contributing
 
-Please run `make lint` before creating your pull request, otherwise
-the CI will fail. If the CI does still fail, check out the results --
-it may be that your code doesn't work in one of the older Emacs
-versions supported by CTRLF. In that case, run e.g. `make docker
-VERSION=25.3` to launch a shell with the appropriate version, at which
-point you can re-run `make lint`.
-
-If you change the sections in the README, remember to run `make toc`.
+Please see [the contributor guide for my
+projects](https://github.com/raxod502/contributor-guide).
