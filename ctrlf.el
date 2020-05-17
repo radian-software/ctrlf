@@ -143,6 +143,8 @@ active in the minibuffer during a search."
     ([remap scroll-up-command]              . ctrlf-next-page)
     ([remap scroll-down-command]            . ctrlf-previous-page)
     ([remap recenter-top-bottom]            . ctrlf-recenter-top-bottom)
+    ;; Reuse transient binding of `isearch-occur'.
+    ("M-s o"     . ctrlf-occur)
     ;; Reuse transient binding of `isearch-forward-symbol-at-point'.
     ("M-s ."     . ctrlf-forward-symbol-at-point)
     ;; Reuse transient binding of `isearch-toggle-case-fold'.
@@ -1128,6 +1130,22 @@ search, change back to regexp search."
       ;; NOTE: We pass `pos' so that `ctrlf-cancel' returns to the
       ;; original position, and not the start of the symbol at point.
       (ctrlf--start arg pos))))
+
+;;;###autoload
+(defun ctrlf-occur ()
+  "Run `occur' using the last search string as the regexp."
+  (interactive)
+  (let* ((input (if ctrlf--active-p (minibuffer-contents)
+                  (car ctrlf-search-history)))
+         (translator (plist-get
+                      (alist-get ctrlf--style ctrlf-style-alist)
+                      :translator))
+         (regexp (funcall translator input)))
+    (if regexp
+        (save-excursion
+          (with-current-buffer (window-buffer (minibuffer-selected-window))
+            (occur regexp)))
+      (ctrlf--message "No input available"))))
 
 (defun ctrlf-forward-fuzzy ()
   "Fuzzy search forward for literal string.
