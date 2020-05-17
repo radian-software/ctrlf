@@ -142,7 +142,11 @@ active in the minibuffer during a search."
     ([remap scroll-up-command]              . ctrlf-next-page)
     ([remap scroll-down-command]            . ctrlf-previous-page)
     ([remap recenter-top-bottom]            . ctrlf-recenter-top-bottom)
+    ;; Reuse transient binding of `isearch-toggle-case-fold'.
+    ("M-s c"     . ctrlf-toggle-case-fold-search)
     ("C-o c"     . ctrlf-toggle-case-fold-search)
+    ;; Reuse transient binding of `isearch-toggle-regexp'.
+    ("M-s s"     . ctrlf-change-search-style)
     ("C-o s"     . ctrlf-change-search-style))
   "Keybindings enabled in minibuffer during search. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
