@@ -826,9 +826,9 @@ And self-destruct this hook."
 
 ;;;; Main entry point
 
-(defun ctrlf--start (&optional arg)
+(defun ctrlf--start (&optional arg pos)
   "Start CTRLF session assuming config vars are set up already.
-Use optional ARG as initial contents."
+Use optional ARG as initial contents and POS as starting point."
   (let ((keymap (make-sparse-keymap)))
     (set-keymap-parent keymap minibuffer-local-map)
     (map-apply
@@ -837,7 +837,7 @@ Use optional ARG as initial contents."
          (setq key (kbd key)))
        (define-key keymap key cmd))
      ctrlf-minibuffer-bindings)
-    (setq ctrlf--starting-point (point))
+    (setq ctrlf--starting-point (or pos (point)))
     (setq ctrlf--current-starting-point (point))
     (setq ctrlf--last-input nil)
     (setq ctrlf--case-fold-search :auto)
