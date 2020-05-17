@@ -826,8 +826,9 @@ And self-destruct this hook."
 
 ;;;; Main entry point
 
-(defun ctrlf--start ()
-  "Start CTRLF session assuming config vars are set up already."
+(defun ctrlf--start (&optional arg)
+  "Start CTRLF session assuming config vars are set up already.
+Use optional ARG as initial contents."
   (let ((keymap (make-sparse-keymap)))
     (set-keymap-parent keymap minibuffer-local-map)
     (map-apply
@@ -855,7 +856,7 @@ And self-destruct this hook."
             (cursor-in-non-selected-windows nil)
             (blink-matching-paren nil))
         (read-from-minibuffer
-         (ctrlf--prompt) nil keymap nil 'ctrlf-search-history
+         (ctrlf--prompt) arg keymap nil 'ctrlf-search-history
          (thing-at-point 'symbol t))))))
 
 ;;;; Public functions
