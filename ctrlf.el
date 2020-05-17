@@ -946,11 +946,12 @@ Wrap around if necessary."
 
 ;;;;; Main commands
 
-(defun ctrlf-forward (style &optional preserve)
+(defun ctrlf-forward (style &optional preserve arg)
   "Search forward using given STYLE (see `ctrlf-style-alist').
 If already in a search, go to next candidate, or if no input then
 insert the previous search string. PRESERVE non-nil means don't
-change the search style if already in a search."
+change the search style if already in a search. Start (or continue)
+the search with ARG."
   (unless ctrlf--active-p
     (setq preserve nil))
   (let ((inhibit-history (or (and (not preserve)
@@ -959,12 +960,20 @@ change the search style if already in a search."
     (unless preserve
       (setq ctrlf--style style))
     (if ctrlf--active-p
-        (if (and (not inhibit-history)
-                 (string-empty-p (field-string (point-max))))
-            (previous-history-element 1)
-          (ctrlf-next-match))
+        (cond
+         ;; Continue search with `arg'.
+         ;; TODO: Is there a better way to replace the minibuffer contents?
+         (arg
+          (delete-minibuffer-contents)
+          (insert arg))
+         ;; Insert the previous search string.
+         ((and (not inhibit-history)
+               (string-empty-p (field-string (point-max))))
+          (previous-history-element 1))
+         ;; Go to next candidate.
+         (t (ctrlf-next-match)))
       (setq ctrlf--backward-p nil)
-      (ctrlf--start))))
+      (ctrlf--start arg))))
 
 (defun ctrlf-backward (style &optional preserve)
   "Search backward using given STYLE (see `ctrlf-style-alist').
