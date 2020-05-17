@@ -112,7 +112,8 @@ lists with the following keys (all mandatory):
   '(([remap isearch-forward        ] . ctrlf-forward-literal)
     ([remap isearch-backward       ] . ctrlf-backward-literal)
     ([remap isearch-forward-regexp ] . ctrlf-forward-regexp)
-    ([remap isearch-backward-regexp] . ctrlf-backward-regexp))
+    ([remap isearch-backward-regexp] . ctrlf-backward-regexp)
+    ([remap isearch-forward-symbol-at-point] . ctrlf-forward-symbol-at-point))
   "Keybindings enabled in `ctrlf-mode'. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 `ctrlf-mode' is (re-)enabled. The keys are strings or raw key
@@ -142,6 +143,8 @@ active in the minibuffer during a search."
     ([remap scroll-up-command]              . ctrlf-next-page)
     ([remap scroll-down-command]            . ctrlf-previous-page)
     ([remap recenter-top-bottom]            . ctrlf-recenter-top-bottom)
+    ;; Reuse transient binding of `isearch-forward-symbol-at-point'.
+    ("M-s ."     . ctrlf-forward-symbol-at-point)
     ;; Reuse transient binding of `isearch-toggle-case-fold'.
     ("M-s c"     . ctrlf-toggle-case-fold-search)
     ("C-o c"     . ctrlf-toggle-case-fold-search)
@@ -1096,6 +1099,16 @@ search, change back to regexp search."
   (if (and (window-minibuffer-p) (not ctrlf--active-p))
       (isearch-backward-regexp)
     (ctrlf-backward 'regexp)))
+
+;;;###autoload
+(defun ctrlf-forward-symbol-at-point ()
+  "Search forward for symbol at point."
+  (interactive)
+  (let ((arg (save-excursion
+               (with-current-buffer
+                   (window-buffer (minibuffer-selected-window))
+                 (thing-at-point 'symbol t)))))
+    (ctrlf-forward 'literal ctrlf--active-p arg)))
 
 (defun ctrlf-forward-fuzzy ()
   "Fuzzy search forward for literal string.
