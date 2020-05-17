@@ -1104,11 +1104,30 @@ search, change back to regexp search."
 (defun ctrlf-forward-symbol-at-point ()
   "Search forward for symbol at point."
   (interactive)
-  (let ((arg (save-excursion
-               (with-current-buffer
-                   (window-buffer (minibuffer-selected-window))
-                 (thing-at-point 'symbol t)))))
-    (ctrlf-forward 'literal ctrlf--active-p arg)))
+  (let ((arg nil)
+        (pos nil))
+    (with-current-buffer (window-buffer (minibuffer-selected-window))
+      (setq pos (point)) ; Save original point.
+      ;; NOTE: This idea is borrowed from `isearch' but I don't see
+      ;; how else it could be implemented.
+      (let ((start (car (find-tag-default-bounds)))) ; Find start of symbol.
+        (when (and start (< start (point))) ; `start' can be nil.
+          (setq ctrlf--current-starting-point start) ; For `ctrlf-forward'.
+          (goto-char start))) ; Side-effect! Hence saving point above.
+      ;; NOTE: If `arg' is `nil' then `ctrlf-forward' recalls from
+      ;; history, which is undesirable, so we give the empty string.
+      ;;
+      ;; TODO: Wrap with symbol boundary constructs \\_< and \\_> and
+      ;; use regexp style.
+      (setq arg (or (thing-at-point 'symbol t) "")))
+    (if ctrlf--active-p
+        (ctrlf-forward 'literal ctrlf--active-p arg)
+      ;; TODO: Do any other config vars need to be setup?
+      (setq ctrlf--style 'literal)
+      (setq ctrlf--backward-p nil)
+      ;; NOTE: We pass `pos' so that `ctrlf-cancel' returns to the
+      ;; original position, and not the start of the symbol at point.
+      (ctrlf--start arg pos))))
 
 (defun ctrlf-forward-fuzzy ()
   "Fuzzy search forward for literal string.
