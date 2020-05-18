@@ -86,7 +86,10 @@ Otherwise, the match count is only shown in the minibuffer."
                              :case-fold ctrlf-no-uppercase-literal-p))
     (fuzzy-regexp . (:prompt "fuzzy regexp"
                              :translator ctrlf-translate-fuzzy-regexp
-                             :case-fold ctrlf-no-uppercase-regexp-p)))
+                             :case-fold ctrlf-no-uppercase-regexp-p))
+    (symbol       . (:prompt "symbol"
+                             :translator ctrlf-translate-symbol
+                             :case-fold ctrlf-no-uppercase-literal-p)))
   "Alist of CTRLF search styles.
 Each search style defines a different way to interpret your
 query, for example as a literal string or as a regexp. The keys
@@ -113,6 +116,7 @@ lists with the following keys (all mandatory):
     ([remap isearch-backward       ] . ctrlf-backward-literal)
     ([remap isearch-forward-regexp ] . ctrlf-forward-regexp)
     ([remap isearch-backward-regexp] . ctrlf-backward-regexp)
+    ([remap isearch-forward-symbol ] . ctrlf-forward-symbol)
     ([remap isearch-forward-symbol-at-point] . ctrlf-forward-symbol-at-point))
   "Keybindings enabled in `ctrlf-mode'. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
@@ -233,6 +237,12 @@ Each subinput is quoted and the results are joined with \".*\"."
 See `ctrlf-split-fuzzy' for how INPUT is split into subinputs.
 The subinputs are joined with \".*\"."
   (string-join (ctrlf-split-fuzzy input) ".*"))
+
+(defun ctrlf-translate-symbol (input)
+  "Build a symbol-matching regexp from literal INPUT.
+The input is treated literally, but quoted as a regexp and
+surrounded by symbol boundary constructs \\_< and \\_>."
+  (concat "\\_<" (regexp-quote input) "\\_>"))
 
 (defun ctrlf-no-uppercase-literal-p (input)
   "Return non-nil if literal INPUT contains no uppercase letters."
@@ -1107,13 +1117,22 @@ search, change back to regexp search."
     (ctrlf-backward 'regexp)))
 
 ;;;###autoload
+(defun ctrlf-forward-symbol ()
+  "Search forward for symbol.
+If already in a search, go to next candidate, or if no input then
+insert the previous search string. If in a non-symbol search,
+change back to symbol search."
+  (interactive)
+  (if (and (window-minibuffer-p) (not ctrlf--active-p))
+      (isearch-forward-symbol)
+    (ctrlf-forward 'symbol)))
+
+;;;###autoload
 (defun ctrlf-forward-symbol-at-point ()
   "Search forward for symbol at point.
-Search for the symbol found at point as a regexp surrounded by
-symbol boundary constructs \\_< and \\_>. If already in a search,
-replace the current input and change to a regexp search,
-otherwise start the search. If no symbol is found, display an
-error message and do not search."
+If already in a search, replace the current input and change to a
+symbol search, otherwise start the search. If no symbol is found,
+display an error message and do not search."
   (interactive)
   (let ((arg nil)
         (pos nil)
@@ -1128,16 +1147,15 @@ error message and do not search."
           (goto-char start))) ; Side-effect! Hence saving point above.
       (let ((symbol (thing-at-point 'symbol t)))
         (if symbol
-            (setq arg (concat "\\_<" (regexp-quote symbol) "\\_>"))
+            (setq arg symbol)
           (setq skip-search t)
           (let ((ctrlf--message-persist-p t))
             (ctrlf--message "No symbol at point")))))
     (unless skip-search
       (if ctrlf--active-p
-          ;; TODO: Should we support other styles?
-          (ctrlf-forward 'regexp nil arg)
+          (ctrlf-forward 'symbol nil arg)
         ;; TODO: Do any other config vars need to be setup?
-        (setq ctrlf--style 'regexp)
+        (setq ctrlf--style 'symbol)
         (setq ctrlf--backward-p nil)
         ;; NOTE: We pass `pos' so that `ctrlf-cancel' returns to the
         ;; original position, and not the start of the symbol at point.
