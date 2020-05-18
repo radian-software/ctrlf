@@ -965,12 +965,12 @@ Wrap around if necessary."
 
 ;;;;; Main commands
 
-(defun ctrlf-forward (style &optional preserve arg)
+(defun ctrlf-forward (style &optional preserve arg pos)
   "Search forward using given STYLE (see `ctrlf-style-alist').
 If already in a search, go to next candidate, or if no input then
 insert the previous search string. PRESERVE non-nil means don't
 change the search style if already in a search. Start (or continue)
-the search with ARG."
+the search with ARG. Use POS as starting point."
   (unless ctrlf--active-p
     (setq preserve nil))
   (let ((inhibit-history (or (and (not preserve)
@@ -981,10 +981,7 @@ the search with ARG."
     (if ctrlf--active-p
         (cond
          ;; Continue search with `arg'.
-         ;; TODO: Is there a better way to replace the minibuffer contents?
-         (arg
-          (delete-minibuffer-contents)
-          (insert arg))
+         (arg (delete-minibuffer-contents) (insert arg))
          ;; Insert the previous search string.
          ((and (not inhibit-history)
                (string-empty-p (field-string (point-max))))
@@ -992,7 +989,7 @@ the search with ARG."
          ;; Go to next candidate.
          (t (ctrlf-next-match)))
       (setq ctrlf--backward-p nil)
-      (ctrlf--start arg))))
+      (ctrlf--start arg pos))))
 
 (defun ctrlf-backward (style &optional preserve)
   "Search backward using given STYLE (see `ctrlf-style-alist').
@@ -1145,21 +1142,15 @@ display an error message and do not search."
         (when (and start (< start (point))) ; `start' can be nil.
           (setq ctrlf--current-starting-point start) ; For `ctrlf-forward'.
           (goto-char start))) ; Side-effect! Hence saving point above.
-      (let ((symbol (thing-at-point 'symbol t)))
-        (if symbol
-            (setq arg symbol)
-          (setq skip-search t)
-          (let ((ctrlf--message-persist-p t))
-            (ctrlf--message "No symbol at point")))))
+      (setq arg (thing-at-point 'symbol t))
+      (unless arg
+        (setq skip-search t)
+        (let ((ctrlf--message-persist-p t))
+          (ctrlf--message "No symbol at point"))))
     (unless skip-search
-      (if ctrlf--active-p
-          (ctrlf-forward 'symbol nil arg)
-        ;; TODO: Do any other config vars need to be setup?
-        (setq ctrlf--style 'symbol)
-        (setq ctrlf--backward-p nil)
-        ;; NOTE: We pass `pos' so that `ctrlf-cancel' returns to the
-        ;; original position, and not the start of the symbol at point.
-        (ctrlf--start arg pos)))))
+      ;; NOTE: We pass `pos' so that `ctrlf-cancel' returns to the
+      ;; original position, and not the start of the symbol at point.
+      (ctrlf-forward 'symbol nil arg pos))))
 
 ;;;###autoload
 (defun ctrlf-occur ()
