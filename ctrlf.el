@@ -1118,14 +1118,14 @@ search, change back to regexp search."
           (goto-char start))) ; Side-effect! Hence saving point above.
       ;; NOTE: If `arg' is `nil' then `ctrlf-forward' recalls from
       ;; history, which is undesirable, so we give the empty string.
-      ;;
-      ;; TODO: Wrap with symbol boundary constructs \\_< and \\_> and
-      ;; use regexp style.
-      (setq arg (or (thing-at-point 'symbol t) "")))
+      (setq arg (or
+                 (format "\\_<%s\\_>"
+                         (regexp-quote (thing-at-point 'symbol t)))
+                 "")))
     (if ctrlf--active-p
-        (ctrlf-forward 'literal ctrlf--active-p arg)
+        (ctrlf-forward 'regexp nil arg)
       ;; TODO: Do any other config vars need to be setup?
-      (setq ctrlf--style 'literal)
+      (setq ctrlf--style 'regexp)
       (setq ctrlf--backward-p nil)
       ;; NOTE: We pass `pos' so that `ctrlf-cancel' returns to the
       ;; original position, and not the start of the symbol at point.
