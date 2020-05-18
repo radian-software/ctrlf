@@ -1108,10 +1108,16 @@ search, change back to regexp search."
 
 ;;;###autoload
 (defun ctrlf-forward-symbol-at-point ()
-  "Search forward for symbol at point."
+  "Search forward for symbol at point.
+Search for the symbol found at point as a regexp surrounded by
+symbol boundary constructs \\_< and \\_>. If already in a search,
+replace the current input and change to a regexp search,
+otherwise start the search. If no symbol is found, display an
+error message and do not search."
   (interactive)
   (let ((arg nil)
-        (pos nil))
+        (pos nil)
+        (skip-search nil))
     (with-current-buffer (window-buffer (minibuffer-selected-window))
       (setq pos (point)) ; Save original point.
       ;; NOTE: This idea is borrowed from `isearch' but I don't see
@@ -1120,20 +1126,22 @@ search, change back to regexp search."
         (when (and start (< start (point))) ; `start' can be nil.
           (setq ctrlf--current-starting-point start) ; For `ctrlf-forward'.
           (goto-char start))) ; Side-effect! Hence saving point above.
-      ;; NOTE: If `arg' is `nil' then `ctrlf-forward' recalls from
-      ;; history, which is undesirable, so we give the empty string.
-      (setq arg (or
-                 (format "\\_<%s\\_>"
-                         (regexp-quote (thing-at-point 'symbol t)))
-                 "")))
-    (if ctrlf--active-p
-        (ctrlf-forward 'regexp nil arg)
-      ;; TODO: Do any other config vars need to be setup?
-      (setq ctrlf--style 'regexp)
-      (setq ctrlf--backward-p nil)
-      ;; NOTE: We pass `pos' so that `ctrlf-cancel' returns to the
-      ;; original position, and not the start of the symbol at point.
-      (ctrlf--start arg pos))))
+      (let ((symbol (thing-at-point 'symbol t)))
+        (if symbol
+            (setq arg (concat "\\_<" (regexp-quote symbol) "\\_>"))
+          (setq skip-search t)
+          (let ((ctrlf--message-persist-p t))
+            (ctrlf--message "No symbol at point")))))
+    (unless skip-search
+      (if ctrlf--active-p
+          ;; TODO: Should we support other styles?
+          (ctrlf-forward 'regexp nil arg)
+        ;; TODO: Do any other config vars need to be setup?
+        (setq ctrlf--style 'regexp)
+        (setq ctrlf--backward-p nil)
+        ;; NOTE: We pass `pos' so that `ctrlf-cancel' returns to the
+        ;; original position, and not the start of the symbol at point.
+        (ctrlf--start arg pos)))))
 
 ;;;###autoload
 (defun ctrlf-occur ()
