@@ -10,7 +10,12 @@ The format is based on [Keep a Changelog].
   history. Note that this functionality is not compatible with
   Selectrum. See [#41].
 
+### Bugs fixed
+* CTRLF previously caused an error during Emacs startup unless the
+  `map` library was already loaded. This has been fixed ([#49]).
+
 [#41]: https://github.com/raxod502/ctrlf/issues/41
+[#49]: https://github.com/raxod502/ctrlf/issues/49
 
 ## 1.0 (released 2020-03-31)
 ### Added
