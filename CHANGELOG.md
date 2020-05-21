@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
 ## Unreleased
+### Features
+* More Isearch compatibility was added in [#48]. Additions include:
+  `ctrlf-occur`, `ctrlf-forward-symbol`,
+  `ctrlf-forward-symbol-at-point`, `ctrlf-toggle-regexp`,
+  `ctrlf-toggle-symbol`, and matching Isearch bindings for those.
+
 ### Enhancements
 * It is now possible to use the standard Isearch bindings within the
   minibuffer to search the current user input and the minibuffer
@@ -23,6 +29,7 @@ The format is based on [Keep a Changelog].
 [#41]: https://github.com/raxod502/ctrlf/issues/41
 [#45]: https://github.com/raxod502/ctrlf/issues/45
 [#46]: https://github.com/raxod502/ctrlf/issues/46
+[#48]: https://github.com/raxod502/ctrlf/issues/48
 [#49]: https://github.com/raxod502/ctrlf/issues/49
 
 ## 1.0 (released 2020-03-31)
