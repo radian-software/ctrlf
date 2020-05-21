@@ -779,7 +779,8 @@ And self-destruct this hook."
                     #'ctrlf--minibuffer-before-change-function
                     nil 'local))
       (let ((ctrlf--active-p t)
-            (cursor-in-non-selected-windows nil))
+            (cursor-in-non-selected-windows nil)
+            (blink-matching-paren nil))
         (read-from-minibuffer
          (ctrlf--prompt) nil keymap nil 'ctrlf-search-history
          (thing-at-point 'symbol t))))))
