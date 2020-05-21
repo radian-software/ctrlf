@@ -151,11 +151,18 @@ active in the minibuffer during a search."
     ("M-s o"     . ctrlf-occur)
     ;; Reuse transient binding of `isearch-forward-symbol-at-point'.
     ("M-s ."     . ctrlf-forward-symbol-at-point)
-    ;; Reuse transient binding of `isearch-toggle-case-fold'.
+    ;; Reuse transient bindings of `isearch-toggle-case-fold'.
+    ("M-c"       . ctrlf-toggle-case-fold-search)
     ("M-s c"     . ctrlf-toggle-case-fold-search)
-    ("C-o c"     . ctrlf-toggle-case-fold-search)
-    ;; Reuse transient binding of `isearch-toggle-regexp'.
+    ;; Reuse transient bindings of `isearch-toggle-regexp'.
+    ("M-r"       . ctrlf-toggle-regexp)
+    ("M-s r"     . ctrlf-toggle-regexp)
+    ;; Reuse transient binding of `isearch-toggle-symbol'.
+    ("M-s _"     . ctrlf-toggle-symbol)
+    ;; Add an Isearch like binding for search style selection.
     ("M-s s"     . ctrlf-change-search-style)
+    ;; Previous bindings for backwards compatibility.
+    ("C-o c"     . ctrlf-toggle-case-fold-search)
     ("C-o s"     . ctrlf-change-search-style))
   "Keybindings enabled in minibuffer during search. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
@@ -1025,6 +1032,18 @@ Interactively, select from the list of all defined styles."
         (mapcar #'symbol-name (map-keys ctrlf-style-alist)))))))
   (setq ctrlf--style style)
   (setq ctrlf--last-input nil))
+
+(defun ctrlf-toggle-regexp ()
+  "Toggle CTRLF style to `regexp' or back to `literal'."
+  (interactive)
+  (setq ctrlf--style
+        (if (eq ctrlf--style 'regexp) 'literal 'regexp)))
+
+(defun ctrlf-toggle-symbol ()
+  "Toggle CTRLF style to `symbol' or back to `literal'."
+  (interactive)
+  (setq ctrlf--style
+        (if (eq ctrlf--style 'symbol) 'literal 'symbol)))
 
 (defun ctrlf-toggle-case-fold-search ()
   "Toggle `case-fold-search' for current CTRLF session.
