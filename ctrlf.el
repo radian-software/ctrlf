@@ -355,7 +355,7 @@ condensation; see `ctrlf--condense-overlays'), only delete that
 part. NEGATE non-nil means delete overlays *not* marked as
 transient."
   (dolist (ol ctrlf--overlays)
-    (if (overlay-get ol 'ctrlf--transient)
+    (if (xor (overlay-get ol 'ctrlf--transient) negate)
         (delete-overlay ol)
       (if-let ((str (overlay-get ol 'after-string)))
           (let ((idx 0))
