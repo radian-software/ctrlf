@@ -38,6 +38,19 @@
 (require 'subr-x)
 (require 'thingatpt)
 
+;;;; Backports
+
+;; Not defined before Emacs 27.1
+(eval-and-compile
+  (unless (fboundp 'xor)
+    (defun xor (cond1 cond2)
+      "Return the boolean exclusive-or of COND1 and COND2.
+If only one of the arguments is non-nil, return it; otherwise
+return nil."
+      (declare (pure t) (side-effect-free error-free))
+      (cond ((not cond1) cond2)
+            ((not cond2) cond1)))))
+
 ;;;; User configuration
 
 (defgroup ctrlf nil
