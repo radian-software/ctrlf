@@ -273,34 +273,49 @@ Value `:auto' means to guess based on the current search query.")
 
 ;;;; Overlay shenanigans
 
-(defvar ctrlf--persistent-overlays nil
-  "List of persistent overlays used by CTRLF.")
+(defvar ctrlf--overlays nil
+  "List of all overlays used by CTRLF.
+They all have a non-nil `ctrlf' property so that we can identify
+them when reading directly from the buffer. Most of our overlays
+have an `after-string' property. Some have a `ctrlf--transient'
+property which indicates that they should be removed after the
+next command. Also, some sub-sections of the string in
+`after-string' can have a non-nil `ctrlf--transient' property
+which indicates that those sub-sections should be removed after
+the next command. (This supports the condensation of persistent
+and transient overlays together; see
+`ctrlf--condense-overlays'.)")
 
-(defvar ctrlf--transient-overlays nil
-  "List of transient overlays used by CTRLF.")
-
-(defun ctrlf--condense-overlays (&optional at)
+(defun ctrlf--condense-overlays ()
   "Combine multiple overlays with `after-string' properties into one.
-All the zero-length overlays AT given buffer position are
-combined. This function should not be necessary, but there are
-several reasons why multiple `after-string' overlays at the same
-point do not behave well. One is that in some cases overlay
-priorities are not considered correctly when Emacs decides which
-string to show first. Another is that multiple `after-string'
-overlays with `cursor' properties on their strings will cause the
-cursor to render between them rather than at the position
-indicated by the highest-priority overlay.
+Look at `ctrlf--overlays' to identify groups of overlays that are
+at the same buffer position, and merge those.
+
+This function should not be necessary, but there are several
+reasons why multiple `after-string' overlays at the same point do
+not behave well. One is that in some cases overlay priorities are
+not considered correctly when Emacs decides which string to show
+first. Another is that multiple `after-string' overlays with
+`cursor' properties on their strings will cause the cursor to
+render between them rather than at the position indicated by the
+highest-priority overlay.
 
 Note that this function is a horrifying hack which cannot
 possibly be expected to do the right thing in general, only in
 certain special cases within CTRLF and frankly I wouldn't even
 trust it in that context."
-  (let ((at (or at (point)))
-        (ols nil))
-    (dolist (ol (overlays-in at at))
-      (when (and (overlay-get ol 'ctrlf)
-                 (overlay-get ol 'after-string))
-        (push ol ols)))
+  (dolist (ols (map-values
+                (seq-group-by
+                 (lambda (ol)
+                   (cons
+                    (overlay-buffer ol)
+                    (overlay-end ol)))
+                 ctrlf--overlays)))
+    (setq ols
+          (cl-delete-if-not
+           (lambda (ol)
+             (overlay-get ol 'after-string))
+           ols))
     (when ols
       (setq ols
             (cl-sort
@@ -310,14 +325,65 @@ trust it in that context."
                       (if (numberp priority)
                           priority
                         0)))))
-      (let ((new-string (mapconcat (lambda (ol)
-                                     (overlay-get ol 'after-string))
-                                   ols
-                                   "")))
-        (remove-text-properties 0 (length new-string) 'cursor new-string)
-        (put-text-property 0 1 'cursor t new-string)
-        (overlay-put (car ols) 'after-string new-string)
-        (mapc #'delete-overlay (cdr ols))))))
+      (let ((str
+             (mapconcat
+              (lambda (ol)
+                (let ((str (overlay-get ol 'after-string)))
+                  (when (overlay-get ol 'ctrlf--transient)
+                    (put-text-property
+                     0 (length str) 'ctrlf--transient t str))
+                  str))
+              ols
+              "")))
+        (remove-text-properties 0 (length str) 'cursor str)
+        (put-text-property 0 1 'cursor t str)
+        (overlay-put (car ols) 'after-string str)
+        (overlay-put (car ols) 'ctrlf--transient nil)
+        (mapc #'delete-overlay (cdr ols)))))
+  (setq ctrlf--overlays
+        (cl-delete-if-not #'overlay-buffer ctrlf--overlays)))
+
+(defun ctrlf--delete-all-overlays ()
+  "Delete all overlays in `ctrlf--overlays'."
+  (mapc #'delete-overlay ctrlf--overlays)
+  (setq ctrlf--overlays nil))
+
+(defun ctrlf--delete-transient-overlays (&optional negate)
+  "Delete overlays marked as transient in `ctrlf--overlays'.
+If only part of an overlay is marked as transient (due to
+condensation; see `ctrlf--condense-overlays'), only delete that
+part. NEGATE non-nil means delete overlays *not* marked as
+transient."
+  (dolist (ol ctrlf--overlays)
+    (if (overlay-get ol 'ctrlf--transient)
+        (delete-overlay ol)
+      (if-let ((str (overlay-get ol 'after-string)))
+          (let ((idx 0))
+            (while (< idx (length str))
+              (let ((cur (get-text-property idx 'ctrlf--transient str))
+                    (next-idx
+                     (or (next-property-change idx str)
+                         (length str))))
+                (if (xor cur negate)
+                    (setq str (concat
+                               (substring str 0 idx)
+                               (substring str next-idx)))
+                  (setq idx next-idx))))
+            (if (string-empty-p str)
+                (delete-overlay ol)
+              (remove-text-properties 0 (length str) 'cursor str)
+              (put-text-property 0 1 'cursor t str)
+              (overlay-put ol 'after-string str))))))
+  (setq ctrlf--overlays
+        (cl-delete-if-not #'overlay-buffer ctrlf--overlays)))
+
+(defun ctrlf--delete-persistent-overlays (&optional negate)
+  "Delete overlays *not* marked as transient in `ctrlf--overlays'.
+If only part of an overlay is not marked as transient (due to
+condensation; see `ctrlf--condense-overlays'), only delete that
+part. NEGATE non-nil means delete overlays that *are* marked as
+transient."
+  (ctrlf--delete-transient-overlays (not negate)))
 
 (defun ctrlf--minibuffer-message-condense (func &rest args)
   "Apply `ctrlf--fix-overlay-cursor-props' after `minibuffer-message'.
@@ -331,14 +397,16 @@ ARGS the original function and its arguments, as usual."
                   (prog1 ol
                     ;; Assume ownership of this overlay so we can mess
                     ;; with it :D
-                    (overlay-put ol 'ctrlf t)))))
+                    (overlay-put ol 'ctrlf t)
+                    (overlay-put ol 'ctrlf--transient t)
+                    (push ol ctrlf--overlays)))))
              (sit-for (symbol-function #'sit-for))
              ((symbol-function #'sit-for)
               (lambda (&rest args)
                 ;; Have to stick this inside of `sit-for' because
                 ;; `minibuffer-message' uses `sit-for' instead of
                 ;; returning.
-                (ctrlf--condense-overlays (point-max))
+                (ctrlf--condense-overlays)
                 (apply sit-for args))))
     (apply func args)))
 
@@ -367,39 +435,28 @@ mess."
       ;; Setting REAR-ADVANCE:
       ;; <https://github.com/raxod502/ctrlf/issues/4>
       (let ((ol (make-overlay (point-max) (point-max) nil nil 'rear-advance)))
-        (if ctrlf--message-persist-p
-            (push ol ctrlf--persistent-overlays)
-          (push ol ctrlf--transient-overlays))
+        (push ol ctrlf--overlays)
         (overlay-put ol 'ctrlf t)
+        (unless ctrlf--message-persist-p
+          (overlay-put ol 'ctrlf--transient t))
         (overlay-put
          ol 'priority
          ;; Prioritize our messages over ones generated by Emacs, and
          ;; persistent messages over transient ones.
          (if ctrlf--message-persist-p 2 1))
-        (overlay-put ol 'after-string string)
-        (ctrlf--condense-overlays (point-max)))
+        (overlay-put ol 'after-string string))
       (when ctrlf--message-in-buffer-p
         (with-current-buffer (window-buffer
                               (minibuffer-selected-window))
           (let* ((loc (point-at-eol))
                  (ol (make-overlay loc loc)))
-            (if ctrlf--message-persist-p
-                (push ol ctrlf--persistent-overlays)
-              (push ol ctrlf--transient-overlays))
+            (push ol ctrlf--overlays)
             (overlay-put ol 'ctrlf t)
+            (unless ctrlf--message-persist-p
+              (overlay-put ol 'ctrlf--transient t))
             (overlay-put ol 'priority 1)
-            (overlay-put ol 'after-string string)
-            (ctrlf--condense-overlays loc)))))))
-
-(defun ctrlf--clear-transient-overlays ()
-  "Delete the transient overlays created by CTRLF."
-  (while ctrlf--transient-overlays
-    (delete-overlay (pop ctrlf--transient-overlays))))
-
-(defun ctrlf--clear-persistent-overlays ()
-  "Delete the persistent overlays created by CTRLF."
-  (while ctrlf--persistent-overlays
-    (delete-overlay (pop ctrlf--persistent-overlays))))
+            (overlay-put ol 'after-string string))))))
+  (ctrlf--condense-overlays))
 
 ;;;; Search primitive
 
@@ -454,7 +511,7 @@ non-nil."
   "Prepare for user input."
   ;; Clear overlays pre-emptively. See
   ;; <https://github.com/raxod502/ctrlf/issues/1>.
-  (ctrlf--clear-transient-overlays))
+  (ctrlf--delete-transient-overlays))
 
 ;;;;; Bookkeeping variables
 
@@ -536,7 +593,7 @@ later (this should be used at the end of the search)."
       (insert new-prompt)))
   (when (< (point) (field-end (point-min)))
     (goto-char (field-end (point-min))))
-  (ctrlf--clear-transient-overlays)
+  (ctrlf--delete-transient-overlays)
   (cl-block nil
     (let* ((input (field-string (point-max)))
            (translator (plist-get
@@ -582,7 +639,7 @@ later (this should be used at the end of the search)."
             (with-selected-window
                 (minibuffer-selected-window)
               (recenter)))
-          (ctrlf--clear-persistent-overlays)
+          (ctrlf--delete-persistent-overlays)
           ;; You might think we could do this before clearing
           ;; persistent overlays, because the message overlay in this
           ;; case will be transient. Unfortunately this does not work,
@@ -655,7 +712,7 @@ later (this should be used at the end of the search)."
                                  (car ctrlf--match-bounds)))
                     (let ((ol (make-overlay
                                (match-beginning 0) (match-end 0))))
-                      (push ol ctrlf--persistent-overlays)
+                      (push ol ctrlf--overlays)
                       (overlay-put ol 'ctrlf t)
                       (overlay-put ol 'priority 2)
                       (if (/= (match-beginning 0) (match-end 0))
@@ -683,7 +740,7 @@ later (this should be used at the end of the search)."
             (when ctrlf--match-bounds
               (let ((ol (make-overlay
                          (car ctrlf--match-bounds) (cdr ctrlf--match-bounds))))
-                (push ol ctrlf--persistent-overlays)
+                (push ol ctrlf--overlays)
                 (overlay-put ol 'ctrlf t)
                 (overlay-put ol 'priority 2)
                 (if (/= (car ctrlf--match-bounds) (cdr ctrlf--match-bounds))
@@ -704,7 +761,7 @@ later (this should be used at the end of the search)."
                               (goto-char (cdr ctrlf--match-bounds))
                               (line-beginning-position 2)))
                        (ol (make-overlay start end)))
-                  (push ol ctrlf--persistent-overlays)
+                  (push ol ctrlf--overlays)
                   (overlay-put ol 'ctrlf t)
                   (overlay-put ol 'face 'ctrlf-highlight-line)
                   (dolist (ol (overlays-in start end))
@@ -739,8 +796,7 @@ And self-destruct this hook."
 (defun ctrlf--minibuffer-exit-hook ()
   "Clean up CTRLF from minibuffer and self-destruct this hook."
   (setq ctrlf--final-window-start (window-start (minibuffer-selected-window)))
-  (ctrlf--clear-transient-overlays)
-  (ctrlf--clear-persistent-overlays)
+  (ctrlf--delete-all-overlays)
   (with-current-buffer (window-buffer (minibuffer-selected-window))
     (ctrlf--restore-all-invisible-overlays)
     (ctrlf--disable-invisible-overlays-at-point 'permanently))
@@ -958,8 +1014,7 @@ different behavior, for which see `recenter-top-bottom'."
 (defun ctrlf-cancel ()
   "Exit search, returning point to original position."
   (interactive)
-  (ctrlf--clear-transient-overlays)
-  (ctrlf--clear-persistent-overlays)
+  (ctrlf--delete-all-overlays)
   (set-window-point (minibuffer-selected-window) ctrlf--starting-point)
   ;; Dirty hack to solve <https://github.com/raxod502/ctrlf/issues/6>.
   (redisplay)

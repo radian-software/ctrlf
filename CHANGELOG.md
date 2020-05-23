@@ -17,9 +17,12 @@ The format is based on [Keep a Changelog].
 ### Bugs fixed
 * CTRLF previously caused an error during Emacs startup unless the
   `map` library was already loaded. This has been fixed ([#49]).
+* Several corner cases relating to minibuffer overlays have been fixed
+  by improving the generality of the overlay management code ([#46]).
 
 [#41]: https://github.com/raxod502/ctrlf/issues/41
 [#45]: https://github.com/raxod502/ctrlf/issues/45
+[#46]: https://github.com/raxod502/ctrlf/issues/46
 [#49]: https://github.com/raxod502/ctrlf/issues/49
 
 ## 1.0 (released 2020-03-31)
