@@ -120,10 +120,6 @@ because `o` is mnemonic for "other":
   in Isearch (following the logic in `isearch-no-upper-case-p`).
 * `C-o s`: Change the search style, e.g. between literal or regexp.
   Search styles are explained thoroughly later in this documentation.
-  Note that this command is not currently compatible with
-  [Selectrum](https://github.com/raxod502/selectrum), although it does
-  work with the standard `completing-read` framework provided by
-  Emacs.
 
 Other than this, keybindings are completely standard. For example, to
 delete the last word in your search query, use `M-DEL`, or to retrieve
