@@ -149,8 +149,6 @@ active in the minibuffer during a search."
     ([remap recenter-top-bottom]            . ctrlf-recenter-top-bottom)
     ;; Reuse transient binding of `isearch-occur'.
     ("M-s o"     . ctrlf-occur)
-    ;; Reuse transient binding of `isearch-forward-symbol-at-point'.
-    ("M-s ."     . ctrlf-forward-symbol-at-point)
     ;; Reuse transient bindings of `isearch-toggle-case-fold'.
     ("M-c"       . ctrlf-toggle-case-fold-search)
     ("M-s c"     . ctrlf-toggle-case-fold-search)
