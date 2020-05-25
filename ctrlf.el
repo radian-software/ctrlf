@@ -850,9 +850,10 @@ And self-destruct this hook."
 
 ;;;; Main entry point
 
-(defun ctrlf--start (&optional arg pos)
+(defun ctrlf--start (&optional initial-contents position)
   "Start CTRLF session assuming config vars are set up already.
-Use optional ARG as initial contents and POS as starting point."
+Use optional INITIAL-CONTENTS as initial contents and POSITION as
+current starting point."
   (let ((keymap (make-sparse-keymap)))
     (set-keymap-parent keymap minibuffer-local-map)
     (map-apply
@@ -862,7 +863,7 @@ Use optional ARG as initial contents and POS as starting point."
        (define-key keymap key cmd))
      ctrlf-minibuffer-bindings)
     (setq ctrlf--starting-point (point))
-    (setq ctrlf--current-starting-point (or pos (point)))
+    (setq ctrlf--current-starting-point (or position (point)))
     (setq ctrlf--last-input nil)
     (setq ctrlf--case-fold-search :auto)
     (setq ctrlf--case-fold-search-toggled nil)
@@ -880,7 +881,7 @@ Use optional ARG as initial contents and POS as starting point."
             (cursor-in-non-selected-windows nil)
             (blink-matching-paren nil))
         (read-from-minibuffer
-         (ctrlf--prompt) arg keymap nil 'ctrlf-search-history
+         (ctrlf--prompt) initial-contents keymap nil 'ctrlf-search-history
          (thing-at-point 'symbol t))))))
 
 ;;;; Public functions
@@ -970,12 +971,13 @@ Wrap around if necessary."
 
 ;;;;; Main commands
 
-(defun ctrlf-forward (style &optional preserve arg pos)
+(defun ctrlf-forward (style &optional preserve initial-contents position)
   "Search forward using given STYLE (see `ctrlf-style-alist').
 If already in a search, go to next candidate, or if no input then
 insert the previous search string. PRESERVE non-nil means don't
-change the search style if already in a search. Start (or continue)
-the search with ARG. Use POS as starting point."
+change the search style if already in a search. Start (or
+continue) the search with INITIAL-CONTENTS. Use POSITION as
+starting point."
   (unless ctrlf--active-p
     (setq preserve nil))
   (let ((inhibit-history (or (and (not preserve)
@@ -985,8 +987,10 @@ the search with ARG. Use POS as starting point."
       (setq ctrlf--style style))
     (if ctrlf--active-p
         (cond
-         ;; Continue search with `arg'.
-         (arg (delete-minibuffer-contents) (insert arg))
+         ;; Continue search with `initial-contents'.
+         (initial-contents
+          (delete-minibuffer-contents)
+          (insert initial-contents))
          ;; Insert the previous search string.
          ((and (not inhibit-history)
                (string-empty-p (field-string (point-max))))
@@ -994,7 +998,7 @@ the search with ARG. Use POS as starting point."
          ;; Go to next candidate.
          (t (ctrlf-next-match)))
       (setq ctrlf--backward-p nil)
-      (ctrlf--start arg pos))))
+      (ctrlf--start initial-contents position))))
 
 (defun ctrlf-backward (style &optional preserve)
   "Search backward using given STYLE (see `ctrlf-style-alist').
@@ -1148,22 +1152,18 @@ If already in a search, replace the current input and change to a
 symbol search, otherwise start the search. If no symbol is found,
 display an error message and do not search."
   (interactive)
-  (let ((arg nil)
-        (pos nil)
+  (let ((initial-contents nil)
+        (position nil)
         (skip-search nil))
     (with-current-buffer (window-buffer (minibuffer-selected-window))
-      ;; NOTE: This idea is borrowed from `isearch' but I don't see
-      ;; how else it could be implemented.
-      (setq pos (car (find-tag-default-bounds)))
-      (setq arg (thing-at-point 'symbol t))
-      (unless arg
+      (setq position (car (find-tag-default-bounds)))
+      (setq initial-contents (thing-at-point 'symbol t))
+      (unless initial-contents
         (setq skip-search t)
         (let ((ctrlf--message-persist-p t))
           (ctrlf--message "No symbol at point"))))
     (unless skip-search
-      ;; NOTE: We pass `pos' so that `ctrlf-cancel' returns to the
-      ;; original position, and not the start of the symbol at point.
-      (ctrlf-forward 'symbol nil arg pos))))
+      (ctrlf-forward 'symbol nil initial-contents position))))
 
 ;;;###autoload
 (defun ctrlf-occur ()
