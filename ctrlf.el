@@ -861,8 +861,8 @@ Use optional ARG as initial contents and POS as starting point."
          (setq key (kbd key)))
        (define-key keymap key cmd))
      ctrlf-minibuffer-bindings)
-    (setq ctrlf--starting-point (or pos (point)))
-    (setq ctrlf--current-starting-point (point))
+    (setq ctrlf--starting-point (point))
+    (setq ctrlf--current-starting-point (or pos (point)))
     (setq ctrlf--last-input nil)
     (setq ctrlf--case-fold-search :auto)
     (setq ctrlf--case-fold-search-toggled nil)
@@ -1152,13 +1152,9 @@ display an error message and do not search."
         (pos nil)
         (skip-search nil))
     (with-current-buffer (window-buffer (minibuffer-selected-window))
-      (setq pos (point)) ; Save original point.
       ;; NOTE: This idea is borrowed from `isearch' but I don't see
       ;; how else it could be implemented.
-      (let ((start (car (find-tag-default-bounds)))) ; Find start of symbol.
-        (when (and start (< start (point))) ; `start' can be nil.
-          (setq ctrlf--current-starting-point start) ; For `ctrlf-forward'.
-          (goto-char start))) ; Side-effect! Hence saving point above.
+      (setq pos (car (find-tag-default-bounds)))
       (setq arg (thing-at-point 'symbol t))
       (unless arg
         (setq skip-search t)
