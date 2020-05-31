@@ -1083,6 +1083,7 @@ search, change back to regexp search."
       (isearch-backward-regexp)
     (ctrlf-backward 'regexp)))
 
+;;;###autoload
 (defun ctrlf-forward-fuzzy ()
   "Fuzzy search forward for literal string.
 If already in a search, go to next candidate, or if no input then
@@ -1091,6 +1092,7 @@ change back to fuzzy search."
   (interactive)
   (ctrlf-forward 'fuzzy))
 
+;;;###autoload
 (defun ctrlf-backward-fuzzy ()
   "Fuzzy search backward for literal string.
 If already in a search, go to previous candidate, or if no input
@@ -1099,6 +1101,7 @@ change back to fuzzy search."
   (interactive)
   (ctrlf-backward 'fuzzy))
 
+;;;###autoload
 (defun ctrlf-forward-fuzzy-regexp ()
   "Fuzzy search forward for literal string.
 If already in a search, go to next candidate, or if no input then
@@ -1107,6 +1110,7 @@ search, change back to fuzzy-regexp search."
   (interactive)
   (ctrlf-forward 'fuzzy-regexp))
 
+;;;###autoload
 (defun ctrlf-backward-fuzzy-regexp ()
   "Fuzzy search backward for literal string.
 If already in a search, go to previous candidate, or if no input
