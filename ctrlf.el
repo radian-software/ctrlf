@@ -1226,13 +1226,12 @@ See `ctrlf-mode-bindings'.")
 
 ;;;###autoload
 (progn
-  (define-minor-mode ctrlf-mode
+  (define-minor-mode ctrlf-local-mode
     "Minor mode to use CTRLF in place of Isearch.
 See `ctrlf-mode-bindings' to customize."
-    :global t
     :keymap ctrlf--keymap
     (require 'map)
-    (when ctrlf-mode
+    (when ctrlf-local-mode
       ;; Hack to clear out keymap. Presumably there's a `clear-keymap'
       ;; function lying around somewhere...?
       (setcdr ctrlf--keymap nil)
@@ -1243,11 +1242,14 @@ See `ctrlf-mode-bindings' to customize."
          (define-key ctrlf--keymap key cmd))
        ctrlf-mode-bindings))
     (with-eval-after-load 'ctrlf
-      (if ctrlf-mode
+      (if ctrlf-local-mode
           (advice-add #'minibuffer-message :around
                       #'ctrlf--minibuffer-message-condense)
         (advice-remove #'minibuffer-message
                        #'ctrlf--minibuffer-message-condense)))))
+
+;;;###autoload
+(define-globalized-minor-mode ctrlf-mode ctrlf-local-mode ctrlf-local-mode)
 
 ;;;; Closing remarks
 

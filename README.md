@@ -232,6 +232,17 @@ following steps:
   `ctrlf-forward` and `ctrlf-backward`, respectively, as subroutines.
 * Bind these functions in `ctrlf-mode-bindings`.
 
+### Disabling CTRLF locally
+
+`ctrlf-mode` is a globalized minor mode that enables the buffer-local
+minor mode `ctrlf-local-mode`. This makes it possible to disable it
+locally in mode-hooks etc. An example where this makes sense is
+`pdf-isearch-minor-mode` from
+[pdf-tools](https://github.com/politza/pdf-tools):
+```elisp
+(add-hook 'pdf-isearch-minor-mode-hook (lambda () (ctrlf-local-mode -1)))
+```
+
 ### Miscellaneous
 
 The minibuffer history for CTRLF is stored in the variable

@@ -26,6 +26,8 @@ The format is based on [Keep a Changelog].
   conflict with them. If you remapped the Isearch commands in your
   configuration, this means you will need to update
   `ctrlf-mode-bindings`. See [#51].
+* It is now possible to disable `ctrlf-mode` buffer locally by
+ disabling `ctrlf-local-mode` in mode hooks etc. See [#53].
 
 ### Bugs fixed
 * CTRLF previously caused an error during Emacs startup unless the
