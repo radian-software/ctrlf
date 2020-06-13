@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog].
   CTRLF, because (for some reason) it uses `sit-for` to display its
   blink and this of course causes search results to be delayed
   ([#45]).
+* Make the ctrlf fuzzy related functions autoload. See [#50].
 
 ### Bugs fixed
 * CTRLF previously caused an error during Emacs startup unless the
@@ -24,6 +25,7 @@ The format is based on [Keep a Changelog].
 [#45]: https://github.com/raxod502/ctrlf/issues/45
 [#46]: https://github.com/raxod502/ctrlf/issues/46
 [#49]: https://github.com/raxod502/ctrlf/issues/49
+[#50]: https://github.com/raxod502/ctrlf/pull/50
 
 ## 1.0 (released 2020-03-31)
 ### Added
