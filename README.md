@@ -58,6 +58,10 @@ Now the usual Isearch bindings will use CTRLF instead:
   `isearch-forward-regexp`)
 * `C-M-r`: `ctrlf-backward-regexp` (originally
   `isearch-backward-regexp`)
+* `M-s _`: `ctrlf-forward-symbol` (originally
+  `isearch-forward-symbol`)
+* `M-s .`: `ctrlf-forward-symbol-at-point` (originally
+  `isearch-forward-symbol-at-point`)
 
 ## User guide
 
@@ -79,6 +83,8 @@ First you must start a search using one of the following keybindings:
 * `C-r`: Search backward for a literal string.
 * `C-M-s`: Search forward for a regexp.
 * `C-M-r`: Search backward for a regexp.
+* `M-s _`: Search forward for a symbol.
+* `M-s .`: Search forward for the symbol at point.
 
 During a search, the following core keybindings are available:
 
@@ -111,15 +117,20 @@ Emacs bindings:
   a prefix argument, has the same effect as usual (see the docstring
   of the `recenter-top-bottom` command).
 
-CTRLF-specific bindings are located under the `C-o` prefix, because it
-is unusual to run the `open-line` command during a text search and
-because `o` is mnemonic for "other":
+CTRLF behavior toggles use the same bindings as in Isearch:
 
-* `C-o c`: Toggle case-sensitive search. By default, search is
-  case-sensitive only if your search contains uppercase letters, like
-  in Isearch (following the logic in `isearch-no-upper-case-p`).
-* `C-o s`: Change the search style, e.g. between literal or regexp.
-  Search styles are explained thoroughly later in this documentation.
+* `M-c` and `M-s c`: Toggle case-sensitive search. By default, search
+  is case-sensitive only if your search contains uppercase letters,
+  like in Isearch (following the logic in `isearch-no-upper-case-p`).
+* `M-s s`: Change the search style, e.g. between literal, regexp,
+  symbol, fuzzy, or fuzzy-regexp. Search styles are explained
+  thoroughly later in this documentation. There is no equivalent to
+  this in Isearch, but the binding should feel familiar.
+* `M-r` and `M-s r`: Toggle between regexp and literal search style.
+* `M-s _`: Toggle between symbol and literal search style.
+* `M-s .`: Change the search input to the symbol at point, and change
+  the search style to symbol.
+* `M-s o`: Open an Occur buffer with the existing search input.
 
 Other than this, keybindings are completely standard. For example, to
 delete the last word in your search query, use `M-DEL`, or to retrieve
