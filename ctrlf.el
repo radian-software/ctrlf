@@ -112,12 +112,12 @@ lists with the following keys (all mandatory):
 
 ;;;###autoload
 (defcustom ctrlf-mode-bindings
-  '(([remap isearch-forward        ] . ctrlf-forward-literal)
-    ([remap isearch-backward       ] . ctrlf-backward-literal)
-    ([remap isearch-forward-regexp ] . ctrlf-forward-regexp)
-    ([remap isearch-backward-regexp] . ctrlf-backward-regexp)
-    ([remap isearch-forward-symbol ] . ctrlf-forward-symbol)
-    ([remap isearch-forward-symbol-at-point] . ctrlf-forward-symbol-at-point))
+  '(("C-s"   . ctrlf-forward-literal)
+    ("C-r"   . ctrlf-backward-literal)
+    ("C-M-s" . ctrlf-forward-regexp)
+    ("C-M-r" . ctrlf-backward-regexp)
+    ("M-s _" . ctrlf-forward-symbol)
+    ("M-s ." . ctrlf-forward-symbol-at-point))
   "Keybindings enabled in `ctrlf-mode'. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 `ctrlf-mode' is (re-)enabled. The keys are strings or raw key

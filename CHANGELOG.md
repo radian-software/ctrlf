@@ -19,6 +19,11 @@ The format is based on [Keep a Changelog].
   CTRLF, because (for some reason) it uses `sit-for` to display its
   blink and this of course causes search results to be delayed
   ([#45]).
+* We bind `C-s`, `C-r`, `C-M-s`, and `C-M-r` directly instead of using
+  `remap`, which means that bindings from unrelated packages may not
+  conflict with them. If you remapped the Isearch commands in your
+  configuration, this means you will need to update
+  `ctrlf-mode-bindings`. See [#51].
 
 ### Bugs fixed
 * CTRLF previously caused an error during Emacs startup unless the
@@ -31,6 +36,7 @@ The format is based on [Keep a Changelog].
 [#46]: https://github.com/raxod502/ctrlf/issues/46
 [#48]: https://github.com/raxod502/ctrlf/issues/48
 [#49]: https://github.com/raxod502/ctrlf/issues/49
+[#51]: https://github.com/raxod502/ctrlf/issues/51
 
 ## 1.0 (released 2020-03-31)
 ### Added
