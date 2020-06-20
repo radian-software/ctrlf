@@ -13,7 +13,8 @@ The format is based on [Keep a Changelog].
   CTRLF, because (for some reason) it uses `sit-for` to display its
   blink and this of course causes search results to be delayed
   ([#45]).
-* Make the ctrlf fuzzy related functions autoload. See [#50].
+* Autoload `ctrlf-forward-fuzzy`, `ctrlf-forward-fuzzy-regexp`,
+  `ctrlf-backward-fuzzy`, and `ctrlf-backward-fuzzy-regexp` ([#50]).
 
 ### Bugs fixed
 * CTRLF previously caused an error during Emacs startup unless the
