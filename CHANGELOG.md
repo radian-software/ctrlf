@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
 ## Unreleased
+### Features
+* More Isearch compatibility was added in [#48]. Additions include:
+  `ctrlf-occur`, `ctrlf-forward-symbol`,
+  `ctrlf-forward-symbol-at-point`, `ctrlf-toggle-regexp`,
+  `ctrlf-toggle-symbol`, and matching Isearch bindings for those.
+
 ### Enhancements
 * It is now possible to use the standard Isearch bindings within the
   minibuffer to search the current user input and the minibuffer
@@ -15,6 +21,11 @@ The format is based on [Keep a Changelog].
   ([#45]).
 * Autoload `ctrlf-forward-fuzzy`, `ctrlf-forward-fuzzy-regexp`,
   `ctrlf-backward-fuzzy`, and `ctrlf-backward-fuzzy-regexp` ([#50]).
+* We bind `C-s`, `C-r`, `C-M-s`, and `C-M-r` directly instead of using
+  `remap`, which means that bindings from unrelated packages may not
+  conflict with them. If you remapped the Isearch commands in your
+  configuration, this means you will need to update
+  `ctrlf-mode-bindings`. See [#51].
 
 ### Bugs fixed
 * CTRLF previously caused an error during Emacs startup unless the
@@ -25,8 +36,10 @@ The format is based on [Keep a Changelog].
 [#41]: https://github.com/raxod502/ctrlf/issues/41
 [#45]: https://github.com/raxod502/ctrlf/issues/45
 [#46]: https://github.com/raxod502/ctrlf/issues/46
+[#48]: https://github.com/raxod502/ctrlf/issues/48
 [#49]: https://github.com/raxod502/ctrlf/issues/49
 [#50]: https://github.com/raxod502/ctrlf/pull/50
+[#51]: https://github.com/raxod502/ctrlf/issues/51
 
 ## 1.0 (released 2020-03-31)
 ### Added
