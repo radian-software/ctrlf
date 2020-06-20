@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog].
   CTRLF, because (for some reason) it uses `sit-for` to display its
   blink and this of course causes search results to be delayed
   ([#45]).
+* Autoload `ctrlf-forward-fuzzy`, `ctrlf-forward-fuzzy-regexp`,
+  `ctrlf-backward-fuzzy`, and `ctrlf-backward-fuzzy-regexp` ([#50]).
 * We bind `C-s`, `C-r`, `C-M-s`, and `C-M-r` directly instead of using
   `remap`, which means that bindings from unrelated packages may not
   conflict with them. If you remapped the Isearch commands in your
@@ -36,6 +38,7 @@ The format is based on [Keep a Changelog].
 [#46]: https://github.com/raxod502/ctrlf/issues/46
 [#48]: https://github.com/raxod502/ctrlf/issues/48
 [#49]: https://github.com/raxod502/ctrlf/issues/49
+[#50]: https://github.com/raxod502/ctrlf/pull/50
 [#51]: https://github.com/raxod502/ctrlf/issues/51
 
 ## 1.0 (released 2020-03-31)
