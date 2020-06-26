@@ -14,6 +14,7 @@ for single-buffer text search in Emacs, replacing packages such as
   * [Search flow](#search-flow)
   * [Customization](#customization)
   * [Search styles](#search-styles)
+  * [Disabling CTRLF locally](#disabling-ctrlf-locally)
   * [Miscellaneous](#miscellaneous)
 - [Why use CTRLF?](#why-use-ctrlf)
   * [Why not Isearch?](#why-not-isearch)
@@ -236,9 +237,9 @@ following steps:
 
 `ctrlf-mode` is a globalized minor mode that enables the buffer-local
 minor mode `ctrlf-local-mode`. This makes it possible to disable it
-locally in mode-hooks etc. An example where this makes sense is
-`pdf-isearch-minor-mode` from
-[pdf-tools](https://github.com/politza/pdf-tools):
+when there is a conflict, for example with `pdf-isearch-minor-mode`
+from [pdf-tools](https://github.com/politza/pdf-tools):
+
 ```elisp
 (add-hook 'pdf-isearch-minor-mode-hook (lambda () (ctrlf-local-mode -1)))
 ```
