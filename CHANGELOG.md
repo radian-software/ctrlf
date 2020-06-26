@@ -26,6 +26,8 @@ The format is based on [Keep a Changelog].
   conflict with them. If you remapped the Isearch commands in your
   configuration, this means you will need to update
   `ctrlf-mode-bindings`. See [#51].
+* It is now possible to disable `ctrlf-mode` buffer-locally by means
+  of `ctrlf-local-mode` ([#52], [#53]).
 
 ### Bugs fixed
 * CTRLF previously caused an error during Emacs startup unless the
@@ -40,6 +42,8 @@ The format is based on [Keep a Changelog].
 [#49]: https://github.com/raxod502/ctrlf/issues/49
 [#50]: https://github.com/raxod502/ctrlf/pull/50
 [#51]: https://github.com/raxod502/ctrlf/issues/51
+[#52]: https://github.com/raxod502/ctrlf/issues/52
+[#53]: https://github.com/raxod502/ctrlf/pull/53
 
 ## 1.0 (released 2020-03-31)
 ### Added
