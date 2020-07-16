@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
-## Unreleased
+## 1.1 (released 2020-07-16)
 ### Enhancements
 * It is now possible to use the standard Isearch bindings within the
   minibuffer to search the current user input and the minibuffer
