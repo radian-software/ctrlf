@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog].
   `ctrlf-forward-symbol-at-point`, `ctrlf-toggle-regexp`,
   `ctrlf-toggle-symbol`, and matching Isearch bindings for those.
 
+[#48]: https://github.com/raxod502/ctrlf/issues/48
+
+## 1.1 (released 2020-07-16)
 ### Enhancements
 * It is now possible to use the standard Isearch bindings within the
   minibuffer to search the current user input and the minibuffer
@@ -38,7 +41,6 @@ The format is based on [Keep a Changelog].
 [#41]: https://github.com/raxod502/ctrlf/issues/41
 [#45]: https://github.com/raxod502/ctrlf/issues/45
 [#46]: https://github.com/raxod502/ctrlf/issues/46
-[#48]: https://github.com/raxod502/ctrlf/issues/48
 [#49]: https://github.com/raxod502/ctrlf/issues/49
 [#50]: https://github.com/raxod502/ctrlf/pull/50
 [#51]: https://github.com/raxod502/ctrlf/issues/51
