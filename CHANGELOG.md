@@ -9,8 +9,21 @@ The format is based on [Keep a Changelog].
   `ctrlf-occur`, `ctrlf-forward-symbol`,
   `ctrlf-forward-symbol-at-point`, `ctrlf-toggle-regexp`,
   `ctrlf-toggle-symbol`, and matching Isearch bindings for those.
+* Autoload `ctrlf-forward-fuzzy`, `ctrlf-forward-fuzzy-regexp`,
+  `ctrlf-backward-fuzzy`, and `ctrlf-backward-fuzzy-regexp` ([#50]).
+* We bind `C-s`, `C-r`, `C-M-s`, and `C-M-r` directly instead of using
+  `remap`, which means that bindings from unrelated packages may not
+  conflict with them. If you remapped the Isearch commands in your
+  configuration, this means you will need to update
+  `ctrlf-mode-bindings`. See [#51].
+* It is now possible to disable `ctrlf-mode` buffer-locally by means
+  of `ctrlf-local-mode` ([#52], [#53]).
 
 [#48]: https://github.com/raxod502/ctrlf/issues/48
+[#50]: https://github.com/raxod502/ctrlf/pull/50
+[#51]: https://github.com/raxod502/ctrlf/issues/51
+[#52]: https://github.com/raxod502/ctrlf/issues/52
+[#53]: https://github.com/raxod502/ctrlf/pull/53
 
 ## 1.1 (released 2020-07-16)
 ### Enhancements
@@ -22,15 +35,6 @@ The format is based on [Keep a Changelog].
   CTRLF, because (for some reason) it uses `sit-for` to display its
   blink and this of course causes search results to be delayed
   ([#45]).
-* Autoload `ctrlf-forward-fuzzy`, `ctrlf-forward-fuzzy-regexp`,
-  `ctrlf-backward-fuzzy`, and `ctrlf-backward-fuzzy-regexp` ([#50]).
-* We bind `C-s`, `C-r`, `C-M-s`, and `C-M-r` directly instead of using
-  `remap`, which means that bindings from unrelated packages may not
-  conflict with them. If you remapped the Isearch commands in your
-  configuration, this means you will need to update
-  `ctrlf-mode-bindings`. See [#51].
-* It is now possible to disable `ctrlf-mode` buffer-locally by means
-  of `ctrlf-local-mode` ([#52], [#53]).
 
 ### Bugs fixed
 * CTRLF previously caused an error during Emacs startup unless the
@@ -42,10 +46,6 @@ The format is based on [Keep a Changelog].
 [#45]: https://github.com/raxod502/ctrlf/issues/45
 [#46]: https://github.com/raxod502/ctrlf/issues/46
 [#49]: https://github.com/raxod502/ctrlf/issues/49
-[#50]: https://github.com/raxod502/ctrlf/pull/50
-[#51]: https://github.com/raxod502/ctrlf/issues/51
-[#52]: https://github.com/raxod502/ctrlf/issues/52
-[#53]: https://github.com/raxod502/ctrlf/pull/53
 
 ## 1.0 (released 2020-03-31)
 ### Added
