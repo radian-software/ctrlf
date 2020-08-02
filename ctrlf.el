@@ -869,6 +869,7 @@ current starting point."
     (setq ctrlf--case-fold-search-toggled nil)
     (minibuffer-with-setup-hook
         (lambda ()
+          (ctrlf-local-mode +1)
           (setq ctrlf--minibuffer (current-buffer))
           (add-hook
            'minibuffer-exit-hook #'ctrlf--minibuffer-exit-hook nil 'local)
@@ -1249,7 +1250,8 @@ See `ctrlf-mode-bindings' to customize."
                        #'ctrlf--minibuffer-message-condense)))))
 
 ;;;###autoload
-(define-globalized-minor-mode ctrlf-mode ctrlf-local-mode ctrlf-local-mode)
+(progn
+  (define-globalized-minor-mode ctrlf-mode ctrlf-local-mode ctrlf-local-mode))
 
 ;;;; Closing remarks
 

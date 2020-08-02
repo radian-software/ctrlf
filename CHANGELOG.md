@@ -18,12 +18,17 @@ The format is based on [Keep a Changelog].
   `ctrlf-mode-bindings`. See [#51].
 * It is now possible to disable `ctrlf-mode` buffer-locally by means
   of `ctrlf-local-mode` ([#52], [#53]).
+* Previously, bindings would not work correctly during a CTRLF search
+  if it was performed immediately after Emacs started up, before using
+  any other command that uses the minibuffer. This has now been fixed
+  ([#55]).
 
 [#48]: https://github.com/raxod502/ctrlf/issues/48
 [#50]: https://github.com/raxod502/ctrlf/pull/50
 [#51]: https://github.com/raxod502/ctrlf/issues/51
 [#52]: https://github.com/raxod502/ctrlf/issues/52
 [#53]: https://github.com/raxod502/ctrlf/pull/53
+[#55]: https://github.com/raxod502/ctrlf/issues/55
 
 ## 1.1 (released 2020-07-16)
 ### Enhancements
