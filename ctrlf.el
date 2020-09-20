@@ -1170,17 +1170,19 @@ display an error message and do not search."
 (defun ctrlf-occur ()
   "Run `occur' using the last search string as the regexp."
   (interactive)
-  (let* ((input (if ctrlf--active-p (minibuffer-contents)
-                  (car ctrlf-search-history)))
-         (translator (plist-get
-                      (alist-get ctrlf--style ctrlf-style-alist)
-                      :translator))
-         (regexp (funcall translator input)))
-    (if regexp
-        (save-excursion
-          (with-current-buffer (window-buffer (minibuffer-selected-window))
-            (occur regexp)))
-      (ctrlf--message "No input available"))))
+  (let ((input (if ctrlf--active-p (minibuffer-contents)
+                 (car ctrlf-search-history))))
+    (unless input
+      (user-error "Can't run `ctrlf-occur' with no previous search"))
+    (let* ((translator (plist-get
+                        (alist-get ctrlf--style ctrlf-style-alist)
+                        :translator))
+           (regexp (funcall translator input)))
+      (if regexp
+          (save-excursion
+            (with-current-buffer (window-buffer (minibuffer-selected-window))
+              (occur regexp)))
+        (ctrlf--message "No input available")))))
 
 ;;;###autoload
 (defun ctrlf-forward-fuzzy ()
