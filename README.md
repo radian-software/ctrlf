@@ -252,6 +252,10 @@ using `M-p` and `M-n`. Typing `M-n` at the beginning of a session will
 perform a search for the symbol at point. Furthermore, typing `C-s` or
 `C-r` without any search query is a synonym for `M-p`.
 
+CTRLF integrates with evil-mode's jump-list and search history
+features. You will be able to jump with `C-o` and `C-i` and continue a
+search with `n` and `N` based on your CTRLF searches.
+
 ## Why use CTRLF?
 
 This section documents why I decided to write CTRLF instead of using
