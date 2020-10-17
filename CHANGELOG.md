@@ -23,12 +23,18 @@ The format is based on [Keep a Changelog].
   any other command that uses the minibuffer. This has now been fixed
   ([#55]).
 
+### Enhancements
+* Compatibility with evil-mode's jump list and search history features
+  was included in [#59]. This integration happens automatically and
+  requires no user input/customisation.
+
 [#48]: https://github.com/raxod502/ctrlf/issues/48
 [#50]: https://github.com/raxod502/ctrlf/pull/50
 [#51]: https://github.com/raxod502/ctrlf/issues/51
 [#52]: https://github.com/raxod502/ctrlf/issues/52
 [#53]: https://github.com/raxod502/ctrlf/pull/53
 [#55]: https://github.com/raxod502/ctrlf/issues/55
+[#59]: https://github.com/raxod502/ctrlf/issues/59
 
 ## 1.1 (released 2020-07-16)
 ### Enhancements

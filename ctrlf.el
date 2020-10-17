@@ -545,6 +545,37 @@ non-nil."
              (point-min)))
           (funcall func query nil 'noerror)))))
 
+;;;; Integration with other packages
+
+;;;;; Evil integration
+
+(defun ctrlf--evil-set-jump ()
+  "Integration with evil's jump list.
+Adds an entry to evil's jump list for the current position."
+  (when (fboundp 'evil-set-jump)
+    ;; Jump must be set in the buffer we are searching, not in the
+    ;; minibuffer which is current during a ctrlf session
+    (with-selected-window (or (minibuffer-selected-window) (selected-window))
+      (evil-set-jump))))
+
+(defun ctrlf--evil-remember-search-string (str)
+  "Integration with evil's search history.
+Will add search pattern STR to evil's search history ring."
+  (when (bound-and-true-p evil-mode)
+    ;; Evil-mode integration is only implicit, so we ignore the warnings about
+    ;; unknown variables.
+    (with-no-warnings
+      (cl-case evil-search-module
+        (isearch
+         (setq isearch-string str))
+        (evil-search
+         (add-to-history 'evil-ex-search-history str)
+         (setq evil-ex-search-pattern (list str nil t))
+         (setq evil-ex-search-direction 'forward)
+         (when evil-ex-search-persistent-highlight
+           (evil-ex-search-activate-highlight evil-ex-search-pattern))))))
+  str)
+
 ;;;; Main loop
 
 (defun ctrlf--minibuffer-before-change-function (&rest _)
@@ -854,6 +885,7 @@ And self-destruct this hook."
   "Start CTRLF session assuming config vars are set up already.
 Use optional INITIAL-CONTENTS as initial contents and POSITION as
 current starting point."
+  (ctrlf--evil-set-jump)
   (let ((keymap (make-sparse-keymap)))
     (set-keymap-parent keymap minibuffer-local-map)
     (map-apply
@@ -881,9 +913,10 @@ current starting point."
       (let ((ctrlf--active-p t)
             (cursor-in-non-selected-windows nil)
             (blink-matching-paren nil))
-        (read-from-minibuffer
-         (ctrlf--prompt) initial-contents keymap nil 'ctrlf-search-history
-         (thing-at-point 'symbol t))))))
+        (ctrlf--evil-remember-search-string
+         (read-from-minibuffer
+          (ctrlf--prompt) initial-contents keymap nil 'ctrlf-search-history
+          (thing-at-point 'symbol t)))))))
 
 ;;;; Public functions
 ;;;;; Navigation
@@ -999,7 +1032,8 @@ starting point."
          ;; Go to next candidate.
          (t (ctrlf-next-match)))
       (setq ctrlf--backward-p nil)
-      (ctrlf--start initial-contents position))))
+      (ctrlf--start initial-contents position)))
+  (ctrlf--evil-set-jump))
 
 (defun ctrlf-backward (style &optional preserve)
   "Search backward using given STYLE (see `ctrlf-style-alist').
@@ -1019,7 +1053,8 @@ don't change the search style if already in a search."
             (previous-history-element 1)
           (ctrlf-previous-match))
       (setq ctrlf--backward-p t)
-      (ctrlf--start))))
+      (ctrlf--start)))
+  (ctrlf--evil-set-jump))
 
 ;;;;; Utilities
 
