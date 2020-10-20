@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
-## Unreleased
+## 1.2 (released 2020-10-20)
 ### Features
 * More Isearch compatibility was added in [#48]. Additions include:
   `ctrlf-occur`, `ctrlf-forward-symbol`,
@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog].
   `ctrlf-mode-bindings`. See [#51].
 * It is now possible to disable `ctrlf-mode` buffer-locally by means
   of `ctrlf-local-mode` ([#52], [#53]).
+
+### Bugs fixed
 * Previously, bindings would not work correctly during a CTRLF search
   if it was performed immediately after Emacs started up, before using
   any other command that uses the minibuffer. This has now been fixed
