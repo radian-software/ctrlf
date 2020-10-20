@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
 ## Unreleased
+### Enhancements
+* Compatibility with evil-mode's jump list and search history features
+  was included in [#59]. This integration happens automatically and
+  requires no user input/customisation.
+
+[#59]: https://github.com/raxod502/ctrlf/issues/59
+
+## 1.2 (released 2020-10-20)
 ### Features
 * More Isearch compatibility was added in [#48]. Additions include:
   `ctrlf-occur`, `ctrlf-forward-symbol`,
@@ -18,15 +26,12 @@ The format is based on [Keep a Changelog].
   `ctrlf-mode-bindings`. See [#51].
 * It is now possible to disable `ctrlf-mode` buffer-locally by means
   of `ctrlf-local-mode` ([#52], [#53]).
+
+### Bugs fixed
 * Previously, bindings would not work correctly during a CTRLF search
   if it was performed immediately after Emacs started up, before using
   any other command that uses the minibuffer. This has now been fixed
   ([#55]).
-
-### Enhancements
-* Compatibility with evil-mode's jump list and search history features
-  was included in [#59]. This integration happens automatically and
-  requires no user input/customisation.
 
 [#48]: https://github.com/raxod502/ctrlf/issues/48
 [#50]: https://github.com/raxod502/ctrlf/pull/50
@@ -34,7 +39,6 @@ The format is based on [Keep a Changelog].
 [#52]: https://github.com/raxod502/ctrlf/issues/52
 [#53]: https://github.com/raxod502/ctrlf/pull/53
 [#55]: https://github.com/raxod502/ctrlf/issues/55
-[#59]: https://github.com/raxod502/ctrlf/issues/59
 
 ## 1.1 (released 2020-07-16)
 ### Enhancements
