@@ -40,6 +40,12 @@ The format is based on [Keep a Changelog].
 [#66]: https://github.com/raxod502/ctrlf/issues/66
 [#73]: https://github.com/raxod502/ctrlf/pull/73
 
+* Customize keybindings by modifying the mode map `ctrlf-mode-map`
+  instead of the `ctrlf-mode-bindings` variable. `ctrlf-mode-bindings`
+  is obsolete but remains available.
+
+[#64] https://github.com/raxod502/ctrlf/pull/64
+
 ## 1.2 (released 2020-10-20)
 ### Features
 * More Isearch compatibility was added in [#48]. Additions include:

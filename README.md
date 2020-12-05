@@ -171,8 +171,8 @@ You can customize the visual appearance of CTRLF:
 
 You can also customize the keybindings:
 
-* User option `ctrlf-mode-bindings` lists keybindings that are made
-  globally available in Emacs when `ctrlf-mode` is enabled.
+* `ctrlf-mode-map` contains keybindings that are made globally
+  available in Emacs when `ctrlf-mode` is enabled.
 * User option `ctrlf-minibuffer-bindings` lists keybindings that are
   made available in the minibuffer during a CTRLF search session.
 
