@@ -75,7 +75,8 @@ Otherwise, the match count is only shown in the minibuffer."
   :type 'boolean)
 
 (defcustom ctrlf-go-to-end-of-match t
-  "Non-nil means to go to the end of the match after the search is finished. Otherwise, it goes to the beginning of the match."
+  "Non-nil means to go to the end of the match after the search is finished.
+Otherwise, it goes to the beginning of the match."
   :type 'boolean)
 
 (defcustom ctrlf-style-alist
@@ -862,7 +863,7 @@ For some reason this gets trashed when exiting the minibuffer, so
 we restore it to keep the scroll position consistent.
 
 I have literally no idea why this is needed.")
-
+"this is a test"
 (defun ctrlf--finalize ()
   "Perform cleanup that has to happen after the minibuffer is exited.
 And self-destruct this hook."
