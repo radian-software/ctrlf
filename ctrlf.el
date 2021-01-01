@@ -177,7 +177,7 @@ entering the minibuffer. The keys are strings or raw key events
 and the values are command symbols. The keymap so constructed
 inherits from `minibuffer-local-map'.
 
-See also `ctrlf-mode-bindings', which defines bindings that are
+See also `ctrlf-mode-map', which defines a keymap that is
 available globally in Emacs when `ctrlf-mode' is active."
   :type '(alist
           :key-type sexp
