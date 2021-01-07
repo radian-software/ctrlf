@@ -704,9 +704,8 @@ later (this should be used at the end of the search)."
             (if (and (not skip-search)
                      (ctrlf--search input :bound 'wraparound))
                 (progn
-                  (goto-char (or
-                              (and ctrlf-go-to-end-of-match
-                                   (match-end 0))
+                  (goto-char (if ctrlf-go-to-end-of-match
+                                 (match-end 0)
                               (match-beginning 0)))
                   (setq ctrlf--match-bounds
                         (cons (match-beginning 0)
