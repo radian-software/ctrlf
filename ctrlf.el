@@ -423,7 +423,7 @@ transient."
   (ctrlf--delete-transient-overlays (not negate)))
 
 (defun ctrlf--minibuffer-message-condense (func &rest args)
-  "Apply `ctrlf--fix-overlay-cursor-props' after `minibuffer-message'.
+  "Apply `ctrlf--condense-overlays' after `minibuffer-message'.
 
 This is an `:around' advice for `minibuffer-message'. FUNC and
 ARGS the original function and its arguments, as usual."
