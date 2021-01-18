@@ -706,7 +706,7 @@ later (this should be used at the end of the search)."
                 (progn
                   (goto-char (if ctrlf-go-to-end-of-match
                                  (match-end 0)
-                              (match-beginning 0)))
+                               (match-beginning 0)))
                   (setq ctrlf--match-bounds
                         (cons (match-beginning 0)
                               (match-end 0))))
