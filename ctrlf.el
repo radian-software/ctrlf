@@ -862,7 +862,7 @@ For some reason this gets trashed when exiting the minibuffer, so
 we restore it to keep the scroll position consistent.
 
 I have literally no idea why this is needed.")
-"this is a test"
+
 (defun ctrlf--finalize ()
   "Perform cleanup that has to happen after the minibuffer is exited.
 And self-destruct this hook."
