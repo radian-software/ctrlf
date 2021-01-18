@@ -183,6 +183,11 @@ and `ctrlf-previous-match`. These functions are the same as
 features of inserting the previous search, changing to a literal
 search, or starting a new search when not already in a search session.
 
+You can customize the behavior:
+
+* If `ctrlf-go-to-end-of-match` is nil, then the cursor will move to
+the beginning of the match instead of the end.
+
 ### Search styles
 
 CTRLF implements support for literal and regexp using an extensible

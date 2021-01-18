@@ -74,6 +74,11 @@ return nil."
 Otherwise, the match count is only shown in the minibuffer."
   :type 'boolean)
 
+(defcustom ctrlf-go-to-end-of-match t
+  "Non-nil means to go to the end of the match after the search is finished.
+Otherwise, it goes to the beginning of the match."
+  :type 'boolean)
+
 (defcustom ctrlf-style-alist
   '((literal      . (:prompt "literal"
                              :translator regexp-quote
@@ -699,7 +704,9 @@ later (this should be used at the end of the search)."
             (if (and (not skip-search)
                      (ctrlf--search input :bound 'wraparound))
                 (progn
-                  (goto-char (match-beginning 0))
+                  (goto-char (if ctrlf-go-to-end-of-match
+                                 (match-end 0)
+                               (match-beginning 0)))
                   (setq ctrlf--match-bounds
                         (cons (match-beginning 0)
                               (match-end 0))))

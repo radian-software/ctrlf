@@ -4,12 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
 ## Unreleased
+### Features
+* New user option `ctrlf-go-to-end-of-match`, if non-nil, puts point
+  at the end of a match when exiting a search, rather than the
+  beginning ([#66], [#73])
+
 ### Enhancements
 * Compatibility with evil-mode's jump list and search history features
   was included in [#59]. This integration happens automatically and
   requires no user input/customisation.
 
 [#59]: https://github.com/raxod502/ctrlf/issues/59
+[#66]: https://github.com/raxod502/ctrlf/issues/66
+[#73]: https://github.com/raxod502/ctrlf/pull/73
 
 ## 1.2 (released 2020-10-20)
 ### Features
