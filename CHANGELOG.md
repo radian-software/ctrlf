@@ -14,9 +14,27 @@ The format is based on [Keep a Changelog].
   was included in [#59]. This integration happens automatically and
   requires no user input/customisation.
 
+### Bugs fixed
+* Since version 1.2, CTRLF had a number of bugs related to third-party
+  minibuffer bindings. Specifically, it would override `C-s` and `C-r`
+  bindings in the minibuffer even when that was totally inappropriate.
+  This was due to a side effect of the fix for [#51] (where CTRLF
+  would be overridden by global `minibuffer-local-map` bindings
+  established by e.g. Helm). We now have a more clever hack that
+  solves both problems. The new version restores the previous use of
+  `remap` for CTRLF mode bindings, which means your customizations of
+  Isearch bindings will again carry over automatically to CTRLF by
+  default. Furthermore, CTRLF bindings will override other bindings in
+  the minibuffer if and only if you are inside an active CTRLF
+  session. Solves [#52], [#67], and [#80].
+
+[#51]: https://github.com/raxod502/ctrlf/issues/51
+[#52]: https://github.com/raxod502/ctrlf/issues/52
 [#59]: https://github.com/raxod502/ctrlf/issues/59
 [#66]: https://github.com/raxod502/ctrlf/issues/66
+[#67]: https://github.com/raxod502/ctrlf/issues/67
 [#73]: https://github.com/raxod502/ctrlf/pull/73
+[#80]: https://github.com/raxod502/ctrlf/issues/80
 
 ## 1.2 (released 2020-10-20)
 ### Features

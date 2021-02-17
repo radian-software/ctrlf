@@ -117,12 +117,12 @@ lists with the following keys (all mandatory):
 
 ;;;###autoload
 (defcustom ctrlf-mode-bindings
-  '(("C-s"   . ctrlf-forward-literal)
-    ("C-r"   . ctrlf-backward-literal)
-    ("C-M-s" . ctrlf-forward-regexp)
-    ("C-M-r" . ctrlf-backward-regexp)
-    ("M-s _" . ctrlf-forward-symbol)
-    ("M-s ." . ctrlf-forward-symbol-at-point))
+  '(([remap isearch-forward]                 . ctrlf-forward-literal)
+    ([remap isearch-backward]                . ctrlf-backward-literal)
+    ([remap isearch-forward-regexp]          . ctrlf-forward-regexp)
+    ([remap isearch-backward-regexp]         . ctrlf-backward-regexp)
+    ([remap isearch-forward-symbol]          . ctrlf-forward-symbol)
+    ([remap isearch-forward-symbol-at-point] . ctrlf-forward-symbol-at-point))
   "Keybindings enabled in `ctrlf-mode'. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 `ctrlf-mode' is (re-)enabled. The keys are strings or raw key
@@ -901,6 +901,22 @@ current starting point."
          (setq key (kbd key)))
        (define-key keymap key cmd))
      ctrlf-minibuffer-bindings)
+    ;; Solve <https://github.com/raxod502/ctrlf/issues/51> without
+    ;; introducing the problems summarized in
+    ;; <https://github.com/raxod502/ctrlf/issues/80> and also reported
+    ;; in <https://github.com/raxod502/ctrlf/issues/67> as well as
+    ;; <https://github.com/raxod502/ctrlf/issues/52>.
+    (map-apply
+     (lambda (key _)
+       (when (stringp key)
+         (setq key (kbd key)))
+       (pcase key
+         (`[remap ,orig-cmd]
+          (when-let ((global-key
+                      (where-is-internal
+                       orig-cmd global-map 'firstonly nil 'no-remap)))
+            (define-key keymap global-key nil)))))
+     ctrlf-mode-bindings)
     (setq ctrlf--starting-point (point))
     (setq ctrlf--current-starting-point (or position (point)))
     (setq ctrlf--last-input nil)
