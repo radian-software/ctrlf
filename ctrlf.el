@@ -1287,6 +1287,11 @@ See `ctrlf-mode-bindings' to customize."
          (define-key ctrlf--keymap key cmd))
        ctrlf-mode-bindings))
     (with-eval-after-load 'ctrlf
+      ;; TODO: This appears to have a bug where if CTRLF is enabled
+      ;; globally, then disabled in a particular buffer, then the
+      ;; advice will be removed globally. Instead, it should be
+      ;; removed only when there are no buffers remaining with CTRLF
+      ;; enabled.
       (if ctrlf-local-mode
           (advice-add #'minibuffer-message :around
                       #'ctrlf--minibuffer-message-condense)
