@@ -1325,7 +1325,6 @@ See `ctrlf-mode-bindings' to customize."
 ;; Local Variables:
 ;; checkdoc-verb-check-experimental-flag: nil
 ;; indent-tabs-mode: nil
-;; outline-regexp: ";;;;* "
 ;; sentence-end-double-space: nil
 ;; End:
 
