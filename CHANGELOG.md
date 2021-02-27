@@ -36,15 +36,14 @@ The format is based on [Keep a Changelog].
   was included in [#59]. This integration happens automatically and
   requires no user input/customisation.
 
-[#59]: https://github.com/raxod502/ctrlf/issues/59
-[#66]: https://github.com/raxod502/ctrlf/issues/66
-[#73]: https://github.com/raxod502/ctrlf/pull/73
-
 * Customize keybindings by modifying the mode map `ctrlf-mode-map`
   instead of the `ctrlf-mode-bindings` variable. `ctrlf-mode-bindings`
   is obsolete but remains available.
 
+[#59]: https://github.com/raxod502/ctrlf/issues/59
 [#64] https://github.com/raxod502/ctrlf/pull/64
+[#66]: https://github.com/raxod502/ctrlf/issues/66
+[#73]: https://github.com/raxod502/ctrlf/pull/73
 
 ## 1.2 (released 2020-10-20)
 ### Features
