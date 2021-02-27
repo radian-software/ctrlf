@@ -182,6 +182,7 @@ available globally in Emacs when `ctrlf-mode' is active."
   :type '(alist
           :key-type sexp
           :value-type function))
+(make-obsolete-variable 'ctrlf-minibuffer-bindings 'ctrlf-minibuffer-mode-map)
 
 (defcustom ctrlf-zero-length-match-width 0.2
   "Width of vertical bar to display for a zero-length match.
@@ -896,30 +897,33 @@ And self-destruct this hook."
 Use optional INITIAL-CONTENTS as initial contents and POSITION as
 current starting point."
   (ctrlf--evil-set-jump)
-  (let ((keymap (make-sparse-keymap)))
-    (set-keymap-parent keymap minibuffer-local-map)
-    (map-apply
-     (lambda (key cmd)
-       (when (stringp key)
-         (setq key (kbd key)))
-       (define-key keymap key cmd))
-     ctrlf-minibuffer-bindings)
-    ;; Solve <https://github.com/raxod502/ctrlf/issues/51> without
-    ;; introducing the problems summarized in
-    ;; <https://github.com/raxod502/ctrlf/issues/80> and also reported
-    ;; in <https://github.com/raxod502/ctrlf/issues/67> as well as
-    ;; <https://github.com/raxod502/ctrlf/issues/52>.
-    (map-apply
-     (lambda (key _)
-       (when (stringp key)
-         (setq key (kbd key)))
-       (pcase key
-         (`[remap ,orig-cmd]
-          (when-let ((global-key
-                      (where-is-internal
-                       orig-cmd global-map 'firstonly nil 'no-remap)))
-            (define-key keymap global-key nil)))))
-     ctrlf-mode-bindings)
+  (let ((keymap))
+    (if (equal ctrlf-minibuffer-bindings (get 'ctrlf-minibuffer-bindings 'standard-value))
+        (setq keymap ctrlf-minibuffer-mode-map)
+      (setq keymap (make-sparse-keymap))
+      (set-keymap-parent keymap minibuffer-local-map)
+      (map-apply
+       (lambda (key cmd)
+         (when (stringp key)
+           (setq key (kbd key)))
+         (define-key keymap key cmd))
+       ctrlf-minibuffer-bindings)
+      ;; Solve <https://github.com/raxod502/ctrlf/issues/51> without
+      ;; introducing the problems summarized in
+      ;; <https://github.com/raxod502/ctrlf/issues/80> and also reported
+      ;; in <https://github.com/raxod502/ctrlf/issues/67> as well as
+      ;; <https://github.com/raxod502/ctrlf/issues/52>.
+      (map-apply
+       (lambda (key _)
+         (when (stringp key)
+           (setq key (kbd key)))
+         (pcase key
+           (`[remap ,orig-cmd]
+            (when-let ((global-key
+                        (where-is-internal
+                         orig-cmd global-map 'firstonly nil 'no-remap)))
+              (define-key keymap global-key nil)))))
+       ctrlf-mode-bindings))
     (setq ctrlf--starting-point (point))
     (setq ctrlf--current-starting-point (or position (point)))
     (setq ctrlf--last-input nil)
@@ -1290,6 +1294,15 @@ search, change back to fuzzy-regexp search."
       (define-key map (car binding) (cdr binding)))
     map)
   "Keymap for `ctrlf-mode'.")
+
+;;;###autoload
+(defvar ctrlf-minibuffer-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map minibuffer-local-map)
+    (dolist (binding ctrlf-minibuffer-bindings)
+      (define-key map (car binding) (cdr binding)))
+    map)
+  "Keymap in the minibuffer when ctrlf is enabled.")
 
 ;;;###autoload
 (progn
