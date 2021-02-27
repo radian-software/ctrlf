@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
-## Unreleased
+## 1.3 (released 2021-02-26)
 ### Features
 * New user option `ctrlf-go-to-end-of-match`, if non-nil, puts point
   at the end of a match when exiting a search, rather than the
