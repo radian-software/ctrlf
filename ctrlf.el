@@ -868,8 +868,7 @@ I have literally no idea why this is needed.")
 And self-destruct this hook."
   (remove-hook 'post-command-hook #'ctrlf--finalize)
   (unless (= (point) ctrlf--starting-point)
-    (push-mark ctrlf--starting-point))
-  (set-window-start nil ctrlf--final-window-start))
+    (push-mark ctrlf--starting-point)))
 
 (defun ctrlf--minibuffer-exit-hook ()
   "Clean up CTRLF from minibuffer and self-destruct this hook."

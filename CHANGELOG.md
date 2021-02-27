@@ -27,6 +27,8 @@ The format is based on [Keep a Changelog].
   default. Furthermore, CTRLF bindings will override other bindings in
   the minibuffer if and only if you are inside an active CTRLF
   session. Solves [#52], [#67], and [#80].
+* Window scroll positions would sometimes be messed up when a buffer
+  was visible in multiple windows. This has been fixed ([#81]).
 
 [#51]: https://github.com/raxod502/ctrlf/issues/51
 [#52]: https://github.com/raxod502/ctrlf/issues/52
