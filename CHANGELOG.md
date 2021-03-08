@@ -19,9 +19,11 @@ The format is based on [Keep a Changelog].
   session. Solves [#52], [#67], and [#80].
 * Window scroll positions would sometimes be messed up when a buffer
   was visible in multiple windows. This has been fixed ([#81]).
+* Add a new matching style for matching words ([#61]).
 
 [#51]: https://github.com/raxod502/ctrlf/issues/51
 [#52]: https://github.com/raxod502/ctrlf/issues/52
+[#61]: https://github.com/raxod502/ctrlf/issues/61
 [#67]: https://github.com/raxod502/ctrlf/issues/67
 [#80]: https://github.com/raxod502/ctrlf/issues/80
 
