@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
 ## Unreleased
+### Features
+* Add a new matching style for matching words ([#61]).
+
 ### Bugs fixed
 * Since version 1.2, CTRLF had a number of bugs related to third-party
   minibuffer bindings. Specifically, it would override `C-s` and `C-r`
@@ -19,7 +22,6 @@ The format is based on [Keep a Changelog].
   session. Solves [#52], [#67], and [#80].
 * Window scroll positions would sometimes be messed up when a buffer
   was visible in multiple windows. This has been fixed ([#81]).
-* Add a new matching style for matching words ([#61]).
 
 [#51]: https://github.com/raxod502/ctrlf/issues/51
 [#52]: https://github.com/raxod502/ctrlf/issues/52
