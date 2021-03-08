@@ -94,6 +94,9 @@ Otherwise, it goes to the beginning of the match."
                              :case-fold ctrlf-no-uppercase-regexp-p))
     (symbol       . (:prompt "symbol"
                              :translator ctrlf-translate-symbol
+                             :case-fold ctrlf-no-uppercase-literal-p))
+    (word         . (:prompt "word"
+                             :translator ctrlf-translate-word
                              :case-fold ctrlf-no-uppercase-literal-p)))
   "Alist of CTRLF search styles.
 Each search style defines a different way to interpret your
@@ -253,6 +256,12 @@ The subinputs are joined with \".*\"."
 The input is treated literally, but quoted as a regexp and
 surrounded by symbol boundary constructs \\_< and \\_>."
   (concat "\\_<" (regexp-quote input) "\\_>"))
+
+(defun ctrlf-translate-word (input)
+  "Build a word-matching regexp from literal INPUT.
+The input is treated literally, but quoted as a regexp and
+surrounded by word boundary constructs \\< and \\>."
+  (concat "\\<" (regexp-quote input) "\\>"))
 
 (defun ctrlf-no-uppercase-literal-p (input)
   "Return non-nil if literal INPUT contains no uppercase letters."
