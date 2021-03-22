@@ -82,10 +82,13 @@ Otherwise, it goes to the beginning of the match."
 (defcustom ctrlf-style-alist
   '((literal      . (:prompt "literal"
                              :translator regexp-quote
-                             :case-fold ctrlf-no-uppercase-literal-p))
+                             :case-fold ctrlf-no-uppercase-literal-p
+                             :fallback (isearch-forward . isearch-backward)))
     (regexp       . (:prompt "regexp"
                              :translator identity
-                             :case-fold ctrlf-no-uppercase-regexp-p))
+                             :case-fold ctrlf-no-uppercase-regexp-p
+                             :fallback (isearch-forward-regexp
+                                        . isearch-backward-regexp)))
     (fuzzy        . (:prompt "fuzzy"
                              :translator ctrlf-translate-fuzzy-literal
                              :case-fold ctrlf-no-uppercase-literal-p))
@@ -94,7 +97,8 @@ Otherwise, it goes to the beginning of the match."
                              :case-fold ctrlf-no-uppercase-regexp-p))
     (symbol       . (:prompt "symbol"
                              :translator ctrlf-translate-symbol
-                             :case-fold ctrlf-no-uppercase-literal-p))
+                             :case-fold ctrlf-no-uppercase-literal-p
+                             :fallback (isearch-forward-symbol)))
     (word         . (:prompt "word"
                              :translator ctrlf-translate-word
                              :case-fold ctrlf-no-uppercase-literal-p)))
@@ -111,7 +115,11 @@ lists with the following keys (all mandatory):
 - `:case-fold': function which takes your query string and
   returns a value for `case-fold-search' to use by default (for
   example, non-nil only if the query does not contain any
-  uppercase letters)."
+  uppercase letters).
+- `:fallback': a cons of of two symbols specifying the fallback
+forward and backward search functions that are called when CTRLF
+search functions are called in the minibuffer and when not in a
+search already."
   :type '(alist
           :key-type symbol
           :value-type (list (const :prompt) string
@@ -120,10 +128,10 @@ lists with the following keys (all mandatory):
 
 ;;;###autoload
 (defcustom ctrlf-mode-bindings
-  '(([remap isearch-forward]                 . ctrlf-forward-literal)
-    ([remap isearch-backward]                . ctrlf-backward-literal)
-    ([remap isearch-forward-regexp]          . ctrlf-forward-regexp)
-    ([remap isearch-backward-regexp]         . ctrlf-backward-regexp)
+  '(([remap isearch-forward]                 . ctrlf-forward-default)
+    ([remap isearch-backward]                . ctrlf-backward-default)
+    ([remap isearch-forward-regexp]          . ctrlf-forward-alternate)
+    ([remap isearch-backward-regexp]         . ctrlf-backward-alternate)
     ([remap isearch-forward-symbol]          . ctrlf-forward-symbol)
     ([remap isearch-forward-symbol-at-point] . ctrlf-forward-symbol-at-point))
   "Keybindings enabled in `ctrlf-mode'. This is not a keymap.
@@ -186,6 +194,22 @@ available globally in Emacs when `ctrlf-mode' is active."
   "Width of vertical bar to display for a zero-length match.
 This is relative to the normal width of a character."
   :type 'number)
+
+(defcustom ctrlf-default-search-style 'literal
+  "Default CTRLF search style.
+
+This style is used by `ctrlf-forward-default' and
+`ctrlf-backward-default'. Valid values for this option are the
+styles defined in `ctrlf-style-alist'"
+  :type 'symbol)
+
+(defcustom ctrlf-alternate-search-style 'regexp
+  "Alternative CTRLF search style.
+
+This style is used by `ctrlf-forward-alternate' and
+`ctrlf-backward-alternate'. Valid values for this option are the
+styles defined in `ctrlf-style-alist'"
+  :type 'symbol)
 
 ;;;;; Functions for use in configuration
 
@@ -1036,56 +1060,75 @@ Wrap around if necessary."
 
 ;;;;; Main commands
 
-(defun ctrlf-forward (style &optional preserve initial-contents position)
+(defun ctrlf-forward (style &optional preserve initial-contents
+                            position fallback)
   "Search forward using given STYLE (see `ctrlf-style-alist').
 If already in a search, go to next candidate, or if no input then
 insert the previous search string. PRESERVE non-nil means don't
 change the search style if already in a search. Start (or
 continue) the search with INITIAL-CONTENTS. Use POSITION as
-starting point."
-  (unless ctrlf--active-p
-    (setq preserve nil))
-  (let ((inhibit-history (or (and (not preserve)
-                                  (not (eq style ctrlf--style)))
-                             (not (eq nil   ctrlf--backward-p)))))
-    (unless preserve
-      (setq ctrlf--style style))
-    (if ctrlf--active-p
-        (cond
-         ;; Continue search with `initial-contents'.
-         (initial-contents
-          (delete-minibuffer-contents)
-          (insert initial-contents))
-         ;; Insert the previous search string.
-         ((and (not inhibit-history)
-               (string-empty-p (field-string (point-max))))
-          (previous-history-element 1))
-         ;; Go to next candidate.
-         (t (ctrlf-next-match)))
-      (setq ctrlf--backward-p nil)
-      (ctrlf--start initial-contents position)))
-  (ctrlf--evil-set-jump))
+starting point. If FALLBACK is non-nil and in a minibuffer and
+not in a search already, call the fallback search function
+instead."
+  (if (and fallback (window-minibuffer-p) (not ctrlf--active-p))
+      (let* ((fallback (car (plist-get
+                             (alist-get style ctrlf-style-alist)
+                             :fallback))))
+        (if fallback
+            (funcall fallback)
+          (error "CTRLF fallback function not available")))
+    (unless ctrlf--active-p
+      (setq preserve nil))
+    (let ((inhibit-history (or (and (not preserve)
+                                    (not (eq style ctrlf--style)))
+                               (not (eq nil   ctrlf--backward-p)))))
+      (unless preserve
+        (setq ctrlf--style style))
+      (if ctrlf--active-p
+          (cond
+           ;; Continue search with `initial-contents'.
+           (initial-contents
+            (delete-minibuffer-contents)
+            (insert initial-contents))
+           ;; Insert the previous search string.
+           ((and (not inhibit-history)
+                 (string-empty-p (field-string (point-max))))
+            (previous-history-element 1))
+           ;; Go to next candidate.
+           (t (ctrlf-next-match)))
+        (setq ctrlf--backward-p nil)
+        (ctrlf--start initial-contents position)))
+    (ctrlf--evil-set-jump)))
 
-(defun ctrlf-backward (style &optional preserve)
+(defun ctrlf-backward (style &optional preserve fallback)
   "Search backward using given STYLE (see `ctrlf-style-alist').
 If already in a search, go to previous candidate, or if no input
 then insert the previous search string. PRESERVE non-nil means
-don't change the search style if already in a search."
-  (unless ctrlf--active-p
-    (setq preserve nil))
-  (let ((inhibit-history (or (and (not preserve)
-                                  (not (eq style ctrlf--style)))
-                             (not      (eq t     ctrlf--backward-p)))))
-    (unless preserve
-      (setq ctrlf--style style))
-    (if ctrlf--active-p
-        (if (and (not inhibit-history)
-                 (string-empty-p (field-string (point-max))))
-            (previous-history-element 1)
-          (ctrlf-previous-match))
-      (setq ctrlf--backward-p t)
-      (ctrlf--start)))
-  (ctrlf--evil-set-jump))
+don't change the search style if already in a search. If FALLBACK
+is non-nil and in a minibuffer and not in a search already, call
+the fallback search function instead."
+  (if (and fallback (window-minibuffer-p) (not ctrlf--active-p))
+      (let* ((fallback (cdr (plist-get
+                             (alist-get style ctrlf-style-alist)
+                             :fallback))))
+        (if fallback
+            (funcall fallback)
+          (error "CTRLF fallback function not available")))
+    (unless ctrlf--active-p
+      (setq preserve nil))
+    (let ((inhibit-history (or (and (not preserve)
+                                    (not (eq style ctrlf--style)))
+                               (not      (eq t     ctrlf--backward-p)))))
+      (unless preserve
+        (setq ctrlf--style style))
+      (if ctrlf--active-p
+          (if (and (not inhibit-history)
+                   (string-empty-p (field-string (point-max))))
+              (previous-history-element 1)
+            (ctrlf-previous-match))
+        (setq ctrlf--backward-p t)
+        (ctrlf--start)))
+    (ctrlf--evil-set-jump)))
 
 ;;;;; Utilities
 
@@ -1154,30 +1197,80 @@ different behavior, for which see `recenter-top-bottom'."
 ;;;;; Main-command wrappers for built-in styles
 
 ;;;###autoload
-(defun ctrlf-forward-literal (&optional arg)
+(defun ctrlf-forward-default (&optional arg)
+  "Search forward using the default search style.
+The default search style is specified in
+`ctrlf-default-search-style'. If already in a search, go to next
+candidate, or if no input then insert the previous search string.
+If in a different search than `ctrlf-default-search-style',
+change back to that style if prefix ARG is provided. If in the
+minibuffer but not in a search already, run fallback isearch
+function instead."
+  (interactive "P")
+  (ctrlf-forward ctrlf-default-search-style
+                 (null arg) nil nil t))
+
+;;;###autoload
+(defun ctrlf-backward-default (&optional arg)
+  "Search backward using the default search style.
+The default search style is specified in
+`ctrlf-default-search-style'. If already in a search, go to
+previous candidate, or if no input then insert the previous
+search string. If in a different search than
+`ctrlf-default-search-style', change back to that style if prefix
+ARG is provided. If in the minibuffer but not in a search
+already, run fallback isearch function instead."
+  (interactive "P")
+  (ctrlf-backward ctrlf-default-search-style (null arg) t))
+
+
+;;;###autoload
+(defun ctrlf-forward-alternate ()
+  "Search forward using the alternate search style.
+The default search style is specified in
+`ctrlf-alternate-search-style'. If already in a search, go to
+next candidate, or if no input then insert the previous search
+string. If in a different search than
+`ctrlf-alternate-search-style', change back to that style. If in
+the minibuffer but not in a search already, run fallback isearch
+function instead."
+  (interactive)
+  (ctrlf-forward ctrlf-alternate-search-style
+                 nil nil nil t))
+
+;;;###autoload
+(defun ctrlf-backward-alternate ()
+  "Search backward using the alternate search style.
+The default search style is specified in
+`ctrlf-alternate-search-style'. If already in a search, go to
+previous candidate, or if no input then insert the previous
+search string. If in a different search than
+`ctrlf-alternate-search-style', change back to that style. If in
+the minibuffer but not in a search already, run fallback isearch
+function instead."
+  (interactive)
+  (ctrlf-backward ctrlf-alternate-search-style
+                  nil t))
+
+;;;###autoload
+(defun ctrlf-forward-literal ()
   "Search forward for literal string.
 If already in a search, go to next candidate, or if no input then
 insert the previous search string. If in a non-literal search,
-change back to literal search if prefix ARG is provided. If in
-the minibuffer but not in a search already, run command
-`isearch-forward' instead."
-  (interactive "P")
-  (if (and (window-minibuffer-p) (not ctrlf--active-p))
-      (isearch-forward)
-    (ctrlf-forward 'literal (null arg))))
+change back to regexp search. If in the minibuffer but not in a
+search already, run the function `isearch-forward' instead."
+  (interactive)
+  (ctrlf-forward 'literal nil nil nil t))
 
 ;;;###autoload
-(defun ctrlf-backward-literal (&optional arg)
+(defun ctrlf-backward-literal ()
   "Search backward for literal string.
 If already in a search, go to previous candidate, or if no input
 then insert the previous search string. If in a non-literal
-search, change back to literal search if prefix ARG is provided.
-If in the minibuffer but not in a search already, run
-`isearch-backward' instead."
-  (interactive "P")
-  (if (and (window-minibuffer-p) (not ctrlf--active-p))
-      (isearch-backward)
-    (ctrlf-backward 'literal (null arg))))
+search, change back to literal search. If in the minibuffer but
+not in a search already, run `isearch-backward' instead."
+  (interactive)
+  (ctrlf-backward 'literal nil t))
 
 ;;;###autoload
 (defun ctrlf-forward-regexp ()
@@ -1186,9 +1279,7 @@ If already in a search, go to next candidate, or if no input then
 insert the previous search string. If in a non-regexp search,
 change back to regexp search."
   (interactive)
-  (if (and (window-minibuffer-p) (not ctrlf--active-p))
-      (isearch-forward-regexp)
-    (ctrlf-forward 'regexp)))
+  (ctrlf-forward 'regexp nil nil nil t))
 
 ;;;###autoload
 (defun ctrlf-backward-regexp ()
@@ -1197,9 +1288,7 @@ If already in a search, go to previous candidate, or if no input
 then insert the previous search string. If in a non-regexp
 search, change back to regexp search."
   (interactive)
-  (if (and (window-minibuffer-p) (not ctrlf--active-p))
-      (isearch-backward-regexp)
-    (ctrlf-backward 'regexp)))
+  (ctrlf-backward 'regexp nil t))
 
 ;;;###autoload
 (defun ctrlf-forward-symbol ()
@@ -1208,9 +1297,7 @@ If already in a search, go to next candidate, or if no input then
 insert the previous search string. If in a non-symbol search,
 change back to symbol search."
   (interactive)
-  (if (and (window-minibuffer-p) (not ctrlf--active-p))
-      (isearch-forward-symbol)
-    (ctrlf-forward 'symbol)))
+  (ctrlf-forward 'symbol nil nil nil t))
 
 ;;;###autoload
 (defun ctrlf-forward-symbol-at-point ()

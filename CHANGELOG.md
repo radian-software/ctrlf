@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog].
 ## Unreleased
 ### Features
 * Add a new matching style for matching words ([#61]).
+* Add ability to customize default and alternative search styles
+  through `ctrlf-default-search-style` and
+  `ctrlf-alternate-search-style` ([#83]).
 
 ### Bugs fixed
 * Since version 1.2, CTRLF had a number of bugs related to third-party
