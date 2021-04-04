@@ -53,16 +53,19 @@ commands.
 
 Now the usual Isearch bindings will use CTRLF instead:
 
-* `C-s`: `ctrlf-forward-literal` (originally `isearch-forward`)
-* `C-r`: `ctrlf-backward-literal` (originally `isearch-backward`)
-* `C-M-s`: `ctrlf-forward-regexp` (originally
+* `C-s`: `ctrlf-forward-default` (originally `isearch-forward`)
+* `C-r`: `ctrlf-backward-default` (originally `isearch-backward`)
+* `C-M-s`: `ctrlf-forward-alternate` (originally
   `isearch-forward-regexp`)
-* `C-M-r`: `ctrlf-backward-regexp` (originally
+* `C-M-r`: `ctrlf-backward-alternate` (originally
   `isearch-backward-regexp`)
 * `M-s _`: `ctrlf-forward-symbol` (originally
   `isearch-forward-symbol`)
 * `M-s .`: `ctrlf-forward-symbol-at-point` (originally
   `isearch-forward-symbol-at-point`)
+
+See [Customization](#customization) to customize the default and
+alternative search styles.
 
 ## User guide
 
@@ -142,6 +145,17 @@ to insert a default value into the minibuffer. In CTRLF, this default
 value is the symbol at point.
 
 ### Customization
+
+You can customize the search styles of CTRLF:
+
+* User option `ctrlf-default-search-style` specifies the default
+  [search style](#search-styles) (default: `'literal`) that
+  `ctrlf-forward-default` (bound to `C-s` by default) and
+  `ctrlf-backward-default` (bound to `C-r` by default) use.
+* Similarly, user option `ctrlf-alternate-search-style` specifies the
+  alternative [search style](#search-styles) (default: `'regex`) that
+  `ctrlf-forward-alternate` (bound to `C-M-s` by default) and
+  `ctrlf-backward-alternate` (bound to `C-M-r` by default).
 
 You can customize the visual appearance of CTRLF:
 

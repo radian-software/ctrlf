@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog].
 ## Unreleased
 ### Features
 * Add a new matching style for matching words ([#61]).
+* Add ability to customize default and alternative search styles
+  through `ctrlf-default-search-style` and
+  `ctrlf-alternate-search-style` ([#83]).
 
 ### Bugs fixed
 * Since version 1.2, CTRLF had a number of bugs related to third-party
@@ -28,6 +31,7 @@ The format is based on [Keep a Changelog].
 [#61]: https://github.com/raxod502/ctrlf/issues/61
 [#67]: https://github.com/raxod502/ctrlf/issues/67
 [#80]: https://github.com/raxod502/ctrlf/issues/80
+[#83]: https://github.com/raxod502/ctrlf/issues/83
 
 ## 1.3 (released 2021-02-26)
 ### Features
