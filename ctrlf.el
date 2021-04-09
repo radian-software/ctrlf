@@ -203,6 +203,10 @@ This style is used by `ctrlf-forward-default' and
 styles defined in `ctrlf-style-alist'"
   :type 'symbol)
 
+(defcustom ctrlf-search-style-is-sticky nil
+  "When set, `ctrlf-change-search-style' overrides `ctrlf-default-search-style'."
+  :type 'boolean)
+
 (defcustom ctrlf-alternate-search-style 'regexp
   "Alternative CTRLF search style.
 
@@ -1143,7 +1147,12 @@ Interactively, select from the list of all defined styles."
         "Style: "
         (mapcar #'symbol-name (map-keys ctrlf-style-alist)))))))
   (setq ctrlf--style style)
-  (setq ctrlf--last-input nil))
+  (setq ctrlf--last-input nil)
+  (when ctrlf-search-style-is-sticky
+    (with-current-buffer (window-buffer (minibuffer-selected-window))
+      (setq-local ctrlf-default-search-style ctrlf--style))))
+
+
 
 (defun ctrlf-toggle-regexp ()
   "Toggle CTRLF style to `regexp' or back to `literal'."
@@ -1198,7 +1207,8 @@ different behavior, for which see `recenter-top-bottom'."
 
 ;;;###autoload
 (defun ctrlf-forward-default (&optional arg)
-  "Search forward using the default search style.
+  "Search forward using the default style unless `ctrlf-search-style-sticky'.
+If `ctrlf-search-style-sticky' use style from `ctrlf-change-search-style'.
 The default search style is specified in
 `ctrlf-default-search-style'. If already in a search, go to next
 candidate, or if no input then insert the previous search string.
@@ -1212,7 +1222,8 @@ function instead."
 
 ;;;###autoload
 (defun ctrlf-backward-default (&optional arg)
-  "Search backward using the default search style.
+  "Search backward using the default style unless `ctrlf-search-style-sticky'.
+If `ctrlf-search-style-sticky' use style from `ctrlf-change-search-style'.
 The default search style is specified in
 `ctrlf-default-search-style'. If already in a search, go to
 previous candidate, or if no input then insert the previous
