@@ -10,6 +10,12 @@ The format is based on [Keep a Changelog].
   through `ctrlf-default-search-style` and
   `ctrlf-alternate-search-style` ([#83]).
 
+### Enhancements
+* When `ctrlf-auto-recenter` is enabled, recentering only begins after
+  you start typing your search query, not immediately on typing `C-s`.
+  This way, if you abort the search immediately, your window is not
+  scrolled ([#93]).
+
 ### Bugs fixed
 * Since version 1.2, CTRLF had a number of bugs related to third-party
   minibuffer bindings. Specifically, it would override `C-s` and `C-r`
@@ -32,6 +38,7 @@ The format is based on [Keep a Changelog].
 [#67]: https://github.com/raxod502/ctrlf/issues/67
 [#80]: https://github.com/raxod502/ctrlf/issues/80
 [#83]: https://github.com/raxod502/ctrlf/issues/83
+[#93]: https://github.com/raxod502/ctrlf/issues/93
 
 ## 1.3 (released 2021-02-26)
 ### Features
