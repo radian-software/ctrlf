@@ -896,13 +896,20 @@ we restore it to keep the scroll position consistent.
 
 I have literally no idea why this is needed.")
 
+(defcustom ctrlf--restore-final-window-start-flag t
+  "Non-nil means reset original buffer's `window-start' exiting minibuffer.
+Possibly need to set this to nil if using split windows.
+See https://github.com/raxod502/ctrlf/issues/81 for further discussions."
+  :type 'boolean)
+
 (defun ctrlf--finalize ()
   "Perform cleanup that has to happen after the minibuffer is exited.
 And self-destruct this hook."
   (remove-hook 'post-command-hook #'ctrlf--finalize)
   (unless (= (point) ctrlf--starting-point)
     (push-mark ctrlf--starting-point))
-  (set-window-start (get-buffer-window) ctrlf--final-window-start))
+  (when ctrlf--restore-final-window-start-flag
+    (set-window-start (get-buffer-window) ctrlf--final-window-start)))
 
 (defun ctrlf--minibuffer-exit-hook ()
   "Clean up CTRLF from minibuffer and self-destruct this hook."
