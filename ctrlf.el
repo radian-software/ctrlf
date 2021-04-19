@@ -746,7 +746,7 @@ later (this should be used at the end of the search)."
               (goto-char prev-point)
               (setq ctrlf--match-bounds nil)))
           (set-window-point (minibuffer-selected-window) (point))
-          (when ctrlf-auto-recenter
+          (when (and ctrlf-auto-recenter ctrlf--match-bounds)
             (with-selected-window
                 (minibuffer-selected-window)
               (recenter)))
