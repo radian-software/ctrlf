@@ -708,7 +708,6 @@ later (this should be used at the end of the search)."
            (translator (plist-get
                         (alist-get ctrlf--style ctrlf-style-alist)
                         :translator))
-           (regexp (funcall translator input))
            (case-fold-search
             (if (eq ctrlf--case-fold-search :auto)
                 (setq ctrlf--case-fold-search-last-guessed
@@ -718,16 +717,24 @@ later (this should be used at the end of the search)."
                                 :case-fold)
                                input))
               ctrlf--case-fold-search))
-           ;; Simple hack for the sake of performance, because taking
-           ;; a regexp that always matches and matching it against the
-           ;; entire buffer takes a long time, and we should avoid
-           ;; doing this every time CTRLF is launched.
-           (skip-search (string-empty-p regexp)))
+           (regexp nil)
+           (skip-search nil))
       (condition-case e
-          (string-match-p regexp "")
-        (invalid-regexp
-         (ctrlf--message "Invalid regexp: %s" (cadr e))
+          (setq regexp (funcall translator input))
+        (error
+         (ctrlf--message "Invalid input: %s" (cadr e))
          (setq skip-search t)))
+      (unless skip-search
+        (condition-case e
+            ;; Simple hack for the sake of performance, because taking a
+            ;; regexp that always matches and matching it against the
+            ;; entire buffer takes a long time, and we should avoid
+            ;; doing this every time CTRLF is launched.
+            (when (string-match-p regexp "")
+              (setq skip-search t))
+          (invalid-regexp
+           (ctrlf--message "Invalid regexp: %s" (cadr e))
+           (setq skip-search t))))
       (unless (equal input ctrlf--last-input)
         (setq ctrlf--last-input input)
         (with-current-buffer (window-buffer (minibuffer-selected-window))

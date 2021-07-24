@@ -31,6 +31,9 @@ The format is based on [Keep a Changelog].
   session. Solves [#52], [#67], and [#80].
 * Window scroll positions would sometimes be messed up when a buffer
   was visible in multiple windows. This has been fixed ([#81]).
+* When a regexp translation function throws an error, we now treat it
+  like an invalid regexp rather than CTRLF breaking and not responding
+  to further inputs.
 
 [#51]: https://github.com/raxod502/ctrlf/issues/51
 [#52]: https://github.com/raxod502/ctrlf/issues/52
