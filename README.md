@@ -185,13 +185,13 @@ You can customize the visual appearance of CTRLF:
 
 You can also customize the keybindings:
 
-* User option `ctrlf-mode-bindings` lists keybindings that are made
-  globally available in Emacs when `ctrlf-mode` is enabled.
-* User option `ctrlf-minibuffer-bindings` lists keybindings that are
-  made available in the minibuffer during a CTRLF search session.
+* `ctrlf-mode-map` lists keybindings that are made globally available
+  in Emacs when `ctrlf-mode` is enabled.
+* `ctrlf-minibuffer-mode-map` lists keybindings that are made
+  available in the minibuffer during a CTRLF search session.
 
 In addition to the functions already bound in
-`ctrlf-minibuffer-bindings`, you can choose to bind `ctrlf-next-match`
+`ctrlf-minibuffer-mode-map`, you can choose to bind `ctrlf-next-match`
 and `ctrlf-previous-match`. These functions are the same as
 `ctrlf-forward` and `ctrlf-backward`, but they do not have the special
 features of inserting the previous search, changing to a literal
