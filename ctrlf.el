@@ -167,7 +167,7 @@ active in the minibuffer during a search."
          (set var val)
          (when (bound-and-true-p ctrlf-mode)
            (ctrlf-mode +1))))
-(make-obsolete-variable 'ctrlf-mode-bindings 'ctrlf-mode-map)
+(make-obsolete-variable 'ctrlf-mode-bindings 'ctrlf-mode-map "2.0")
 
 ;;;###autoload
 (defvar ctrlf-minibuffer-mode-map
@@ -236,7 +236,8 @@ available globally in Emacs when `ctrlf-mode' is active."
   :type '(alist
           :key-type sexp
           :value-type function))
-(make-obsolete-variable 'ctrlf-minibuffer-bindings 'ctrlf-minibuffer-mode-map)
+(make-obsolete-variable 'ctrlf-minibuffer-bindings 'ctrlf-minibuffer-mode-map
+                        "2.0")
 
 (defcustom ctrlf-zero-length-match-width 0.2
   "Width of vertical bar to display for a zero-length match.
