@@ -975,6 +975,8 @@ And self-destruct this hook."
 
 ;;;; Main entry point
 
+(defvar ctrlf--ctrlf-minibuffer-bindings-deprecation-warning t)
+
 (defun ctrlf--start (&optional initial-contents position)
   "Start CTRLF session assuming config vars are set up already.
 Use optional INITIAL-CONTENTS as initial contents and POSITION as
@@ -985,6 +987,10 @@ current starting point."
                (eval (car (get 'ctrlf-minibuffer-bindings 'standard-value))))
         (setq keymap ctrlf-minibuffer-mode-map)
       ;; Else maintain backward compatibility
+      (when ctrlf--ctrlf-minibuffer-bindings-deprecation-warning
+        (ctrlf--message "`ctrlf-minibuffer-bindings' will be deprecated. \
+Please use `ctrlf-minibuffer-mode-map' to customize your keybindings instead.")
+        (setq ctrlf--ctrlf-minibuffer-bindings-deprecation-warning nil))
       (setq keymap (make-sparse-keymap))
       (set-keymap-parent keymap minibuffer-local-map)
       (map-apply
@@ -1435,6 +1441,8 @@ search, change back to fuzzy-regexp search."
 
 ;;;; Minor mode
 
+(defvar ctrlf--ctrlf-mode-bindings-deprecation-warning t)
+
 ;;;###autoload
 (progn
   (define-minor-mode ctrlf-local-mode
@@ -1446,6 +1454,10 @@ search, change back to fuzzy-regexp search."
     (when (and ctrlf-local-mode
                default-ctrlf-mode-bindings
                (not (equal ctrlf-mode-bindings default-ctrlf-mode-bindings)))
+      (when ctrlf--ctrlf-mode-bindings-deprecation-warning
+        (message "The `ctrlf-mode-bindings' will be deprecated. Please use \
+`ctrlf-mode-map' to customize your keybindings instead.")
+        (setq ctrlf--ctrlf-mode-bindings-deprecation-warning nil))
       ;; Hack to clear out keymap. Presumably there's a `clear-keymap'
       ;; function lying around somewhere...?
       (setcdr ctrlf-mode-map nil)
