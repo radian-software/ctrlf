@@ -127,6 +127,21 @@ search already."
                             (const :case-fold) function)))
 
 ;;;###autoload
+(defvar ctrlf-mode-map
+  (let ((keymap (make-sparse-keymap)))
+    (define-key keymap [remap isearch-forward] #'ctrlf-forward-default)
+    (define-key keymap [remap isearch-backward] #'ctrlf-backward-default)
+    (define-key keymap [remap isearch-forward-regexp]
+      #'ctrlf-forward-alternate)
+    (define-key keymap [remap isearch-backward-regexp]
+      #'ctrlf-backward-alternate)
+    (define-key keymap [remap isearch-forward-symbol] #'ctrlf-forward-symbol)
+    (define-key keymap [remap isearch-forward-symbol-at-point]
+      #'ctrlf-forward-symbol-at-point)
+    keymap)
+  "Keymap used by Ctrlf globally.")
+
+;;;###autoload
 (defcustom ctrlf-mode-bindings
   '(([remap isearch-forward]                 . ctrlf-forward-default)
     ([remap isearch-backward]                . ctrlf-backward-default)
@@ -134,7 +149,10 @@ search already."
     ([remap isearch-backward-regexp]         . ctrlf-backward-alternate)
     ([remap isearch-forward-symbol]          . ctrlf-forward-symbol)
     ([remap isearch-forward-symbol-at-point] . ctrlf-forward-symbol-at-point))
-  "Keybindings enabled in `ctrlf-mode'. This is not a keymap.
+  "This variable is deprecated.
+To customize the keybindings, modify `ctrlf-mode-map' directly.
+
+Keybindings enabled in `ctrlf-mode'. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 `ctrlf-mode' is (re-)enabled. The keys are strings or raw key
 events and the values are command symbols.
@@ -149,6 +167,32 @@ active in the minibuffer during a search."
          (set var val)
          (when (bound-and-true-p ctrlf-mode)
            (ctrlf-mode +1))))
+(make-obsolete-variable 'ctrlf-mode-bindings 'ctrlf-mode-map)
+
+;;;###autoload
+(defvar ctrlf-minibuffer-mode-map
+  (let ((keymap (make-sparse-keymap)))
+    (set-keymap-parent keymap minibuffer-local-map)
+    (define-key keymap [remap abort-recursive-edit] #'ctrlf-cancel)
+    (define-key keymap [remap minibuffer-keyboard-quit] #'ctrlf-cancel)
+    (define-key keymap [remap minibuffer-beginning-of-buffer]
+      #'ctrlf-first-match)
+    (define-key keymap [remap beginning-of-buffer] #'ctrlf-first-match)
+    (define-key keymap [remap end-of-buffer] #'ctrlf-last-match)
+    (define-key keymap [remap scroll-up-command] #'ctrlf-next-page)
+    (define-key keymap [remap scroll-down-command] #'ctrlf-previous-page)
+    (define-key keymap [remap recenter-top-bottom] #'ctrlf-recenter-top-bottom)
+    (define-key keymap (kbd "M-s o") #'ctrlf-occur)
+    (define-key keymap (kbd "M-c") #'ctrlf-toggle-case-fold-search)
+    (define-key keymap (kbd "M-s c") #'ctrlf-toggle-case-fold-search)
+    (define-key keymap (kbd "M-r") #'ctrlf-toggle-regexp)
+    (define-key keymap (kbd "M-s r") #'ctrlf-toggle-regexp)
+    (define-key keymap (kbd "M-s _") #'ctrlf-toggle-symbol)
+    (define-key keymap (kbd "M-s s") #'ctrlf-change-search-style)
+    (define-key keymap (kbd "C-o c") #'ctrlf-toggle-case-fold-search)
+    (define-key keymap (kbd "C-o s") #'ctrlf-change-search-style)
+    keymap)
+  "Keymap used by Ctrlf in minibuffer during search.")
 
 (defcustom ctrlf-minibuffer-bindings
   '(([remap abort-recursive-edit]           . ctrlf-cancel)
@@ -178,7 +222,10 @@ active in the minibuffer during a search."
     ;; Previous bindings for backwards compatibility.
     ("C-o c"     . ctrlf-toggle-case-fold-search)
     ("C-o s"     . ctrlf-change-search-style))
-  "Keybindings enabled in minibuffer during search. This is not a keymap.
+  "This variable is deprecated.
+To customize the keybindings, modify `ctrlf-minibuffer-mode-map' directly.
+
+Keybindings enabled in minibuffer during search. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 entering the minibuffer. The keys are strings or raw key events
 and the values are command symbols. The keymap so constructed
@@ -189,6 +236,7 @@ available globally in Emacs when `ctrlf-mode' is active."
   :type '(alist
           :key-type sexp
           :value-type function))
+(make-obsolete-variable 'ctrlf-minibuffer-bindings 'ctrlf-minibuffer-mode-map)
 
 (defcustom ctrlf-zero-length-match-width 0.2
   "Width of vertical bar to display for a zero-length match.
