@@ -1431,26 +1431,24 @@ search, change back to fuzzy-regexp search."
 ;;;; Minor mode
 
 ;;;###autoload
-(defvar ctrlf--keymap (make-sparse-keymap)
-  "Keymap for `ctrlf-mode'. Populated when mode is enabled.
-See `ctrlf-mode-bindings'.")
-
-;;;###autoload
 (progn
   (define-minor-mode ctrlf-local-mode
-    "Minor mode to use CTRLF in place of Isearch.
-See `ctrlf-mode-bindings' to customize."
-    :keymap ctrlf--keymap
+    "Minor mode to use CTRLF in place of Isearch."
+    :keymap ctrlf-mode-map
     (require 'map)
-    (when ctrlf-local-mode
+    (setq default-ctrlf-mode-bindings
+          (eval (car (get 'ctrlf-mode-bindings 'standard-value))))
+    (when (and ctrlf-local-mode
+               default-ctrlf-mode-bindings
+               (not (equal ctrlf-mode-bindings default-ctrlf-mode-bindings)))
       ;; Hack to clear out keymap. Presumably there's a `clear-keymap'
       ;; function lying around somewhere...?
-      (setcdr ctrlf--keymap nil)
+      (setcdr ctrlf-mode-map nil)
       (map-apply
        (lambda (key cmd)
          (when (stringp key)
            (setq key (kbd key)))
-         (define-key ctrlf--keymap key cmd))
+         (define-key ctrlf-mode-map key cmd))
        ctrlf-mode-bindings))
     (with-eval-after-load 'ctrlf
       ;; TODO: This appears to have a bug where if CTRLF is enabled
