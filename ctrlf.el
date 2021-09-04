@@ -659,7 +659,11 @@ Assume that S2 has the same properties throughout."
   (while ctrlf--opened-overlays
     (let ((ol (pop ctrlf--opened-overlays)))
       (if-let ((func (overlay-get ol 'isearch-open-invisible-temporary)))
-          (funcall func t)
+          ;; Make sure to call `func' with the appropriate args. See:
+          ;; <https://github.com/raxod502/ctrlf/issues/100>
+          (if (= 2 (car (func-arity func)))
+              (funcall func ol t)
+            (funcall func t))
         (overlay-put ol 'invisible (overlay-get ol 'ctrlf-orig-invisible))
         ;; I don't see a function for removing an overlay property, and
         ;; Isearch does it by setting the property to nil, so I assume
@@ -683,7 +687,11 @@ later (this should be used at the end of the search)."
             (funcall (overlay-get ol 'isearch-open-invisible) ol)
           (push ol ctrlf--opened-overlays)
           (if-let ((func (overlay-get ol 'isearch-open-invisible-temporary)))
-              (funcall func nil)
+              ;; Make sure to call `func' with the appropriate args. See:
+              ;; <https://github.com/raxod502/ctrlf/issues/100>
+              (if (= 2 (car (func-arity func)))
+                  (funcall func ol nil)
+                (funcall func nil))
             (overlay-put ol 'ctrlf-orig-invisible (overlay-get ol 'invisible))
             (overlay-put ol 'invisible nil)))))))
 

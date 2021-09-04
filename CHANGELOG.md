@@ -42,6 +42,7 @@ The format is based on [Keep a Changelog].
 [#80]: https://github.com/raxod502/ctrlf/issues/80
 [#83]: https://github.com/raxod502/ctrlf/issues/83
 [#93]: https://github.com/raxod502/ctrlf/issues/93
+[#100]: https://github.com/raxod502/ctrlf/issues/100
 
 ## 1.3 (released 2021-02-26)
 ### Features
