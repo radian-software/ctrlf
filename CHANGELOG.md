@@ -9,6 +9,11 @@ The format is based on [Keep a Changelog].
 * Add ability to customize default and alternative search styles
   through `ctrlf-default-search-style` and
   `ctrlf-alternate-search-style` ([#83]).
+* Keybinding customization is now available via the `ctrlf-mode-map`
+  and the `ctrlf-minibuffer-mode-map` keymaps. Existing customization
+  via `ctrlf-mode-bindings` and `ctrlf-minibuffer-bindings` are still
+  available at the moment to remain backward compatibility but will be
+  removed in a future release ([#62]).
 
 ### Enhancements
 * When `ctrlf-auto-recenter` is enabled, recentering only begins after
@@ -38,6 +43,7 @@ The format is based on [Keep a Changelog].
 [#51]: https://github.com/raxod502/ctrlf/issues/51
 [#52]: https://github.com/raxod502/ctrlf/issues/52
 [#61]: https://github.com/raxod502/ctrlf/issues/61
+[#62]: https://github.com/raxod502/ctrlf/issues/62
 [#67]: https://github.com/raxod502/ctrlf/issues/67
 [#80]: https://github.com/raxod502/ctrlf/issues/80
 [#83]: https://github.com/raxod502/ctrlf/issues/83

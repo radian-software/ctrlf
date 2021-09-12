@@ -127,6 +127,22 @@ search already."
                             (const :case-fold) function)))
 
 ;;;###autoload
+(defcustom ctrlf-mode-map
+  (let ((keymap (make-sparse-keymap)))
+    (define-key keymap [remap isearch-forward] #'ctrlf-forward-default)
+    (define-key keymap [remap isearch-backward] #'ctrlf-backward-default)
+    (define-key keymap [remap isearch-forward-regexp]
+      #'ctrlf-forward-alternate)
+    (define-key keymap [remap isearch-backward-regexp]
+      #'ctrlf-backward-alternate)
+    (define-key keymap [remap isearch-forward-symbol] #'ctrlf-forward-symbol)
+    (define-key keymap [remap isearch-forward-symbol-at-point]
+      #'ctrlf-forward-symbol-at-point)
+    keymap)
+  "Keymap used by CTRLF globally."
+  :type 'sexp)
+
+;;;###autoload
 (defcustom ctrlf-mode-bindings
   '(([remap isearch-forward]                 . ctrlf-forward-default)
     ([remap isearch-backward]                . ctrlf-backward-default)
@@ -134,7 +150,10 @@ search already."
     ([remap isearch-backward-regexp]         . ctrlf-backward-alternate)
     ([remap isearch-forward-symbol]          . ctrlf-forward-symbol)
     ([remap isearch-forward-symbol-at-point] . ctrlf-forward-symbol-at-point))
-  "Keybindings enabled in `ctrlf-mode'. This is not a keymap.
+  "This variable is deprecated.
+To customize the keybindings, modify `ctrlf-mode-map' directly.
+
+Keybindings enabled in `ctrlf-mode'. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 `ctrlf-mode' is (re-)enabled. The keys are strings or raw key
 events and the values are command symbols.
@@ -149,36 +168,65 @@ active in the minibuffer during a search."
          (set var val)
          (when (bound-and-true-p ctrlf-mode)
            (ctrlf-mode +1))))
+(make-obsolete-variable 'ctrlf-mode-bindings 'ctrlf-mode-map "2021-09-07")
+
+(defcustom ctrlf-minibuffer-mode-map
+  (let ((keymap (make-sparse-keymap)))
+    (set-keymap-parent keymap minibuffer-local-map)
+    ;; This is bound in `minibuffer-local-map' by loading `delsel', so
+    ;; we have to account for it too.
+    (define-key keymap [remap abort-recursive-edit] #'ctrlf-cancel)
+    (define-key keymap [remap minibuffer-keyboard-quit] #'ctrlf-cancel)
+    ;; Use `minibuffer-beginning-of-buffer' for Emacs >=27 and
+    ;; `beginning-of-buffer' for Emacs <=26.
+    (define-key keymap [remap minibuffer-beginning-of-buffer]
+      #'ctrlf-first-match)
+    (define-key keymap [remap beginning-of-buffer] #'ctrlf-first-match)
+    (define-key keymap [remap end-of-buffer] #'ctrlf-last-match)
+    (define-key keymap [remap scroll-up-command] #'ctrlf-next-page)
+    (define-key keymap [remap scroll-down-command] #'ctrlf-previous-page)
+    (define-key keymap [remap recenter-top-bottom] #'ctrlf-recenter-top-bottom)
+    ;; Reuse transient binding of `isearch-occur'.
+    (define-key keymap (kbd "M-s o") #'ctrlf-occur)
+    ;; Reuse transient bindings of `isearch-toggle-case-fold'.
+    (define-key keymap (kbd "M-c") #'ctrlf-toggle-case-fold-search)
+    (define-key keymap (kbd "M-s c") #'ctrlf-toggle-case-fold-search)
+    ;; Reuse transient bindings of `isearch-toggle-regexp'.
+    (define-key keymap (kbd "M-r") #'ctrlf-toggle-regexp)
+    (define-key keymap (kbd "M-s r") #'ctrlf-toggle-regexp)
+    ;; Reuse transient binding of `isearch-toggle-symbol'.
+    (define-key keymap (kbd "M-s _") #'ctrlf-toggle-symbol)
+    ;; Add an Isearch like binding for search style selection.
+    (define-key keymap (kbd "M-s s") #'ctrlf-change-search-style)
+    ;; Previous bindings for backwards compatibility.
+    (define-key keymap (kbd "C-o c") #'ctrlf-toggle-case-fold-search)
+    (define-key keymap (kbd "C-o s") #'ctrlf-change-search-style)
+    keymap)
+  "Keymap used by CTRLF in minibuffer during search."
+  :type 'sexp)
 
 (defcustom ctrlf-minibuffer-bindings
   '(([remap abort-recursive-edit]           . ctrlf-cancel)
-    ;; This is bound in `minibuffer-local-map' by loading `delsel', so
-    ;; we have to account for it too.
     ([remap minibuffer-keyboard-quit]       . ctrlf-cancel)
-    ;; Use `minibuffer-beginning-of-buffer' for Emacs >=27 and
-    ;; `beginning-of-buffer' for Emacs <=26.
     ([remap minibuffer-beginning-of-buffer] . ctrlf-first-match)
     ([remap beginning-of-buffer]            . ctrlf-first-match)
     ([remap end-of-buffer]                  . ctrlf-last-match)
     ([remap scroll-up-command]              . ctrlf-next-page)
     ([remap scroll-down-command]            . ctrlf-previous-page)
     ([remap recenter-top-bottom]            . ctrlf-recenter-top-bottom)
-    ;; Reuse transient binding of `isearch-occur'.
     ("M-s o"     . ctrlf-occur)
-    ;; Reuse transient bindings of `isearch-toggle-case-fold'.
     ("M-c"       . ctrlf-toggle-case-fold-search)
     ("M-s c"     . ctrlf-toggle-case-fold-search)
-    ;; Reuse transient bindings of `isearch-toggle-regexp'.
     ("M-r"       . ctrlf-toggle-regexp)
     ("M-s r"     . ctrlf-toggle-regexp)
-    ;; Reuse transient binding of `isearch-toggle-symbol'.
     ("M-s _"     . ctrlf-toggle-symbol)
-    ;; Add an Isearch like binding for search style selection.
     ("M-s s"     . ctrlf-change-search-style)
-    ;; Previous bindings for backwards compatibility.
     ("C-o c"     . ctrlf-toggle-case-fold-search)
     ("C-o s"     . ctrlf-change-search-style))
-  "Keybindings enabled in minibuffer during search. This is not a keymap.
+  "This variable is deprecated.
+To customize the keybindings, modify `ctrlf-minibuffer-mode-map' directly.
+
+Keybindings enabled in minibuffer during search. This is not a keymap.
 Rather it is an alist that is converted into a keymap just before
 entering the minibuffer. The keys are strings or raw key events
 and the values are command symbols. The keymap so constructed
@@ -189,6 +237,8 @@ available globally in Emacs when `ctrlf-mode' is active."
   :type '(alist
           :key-type sexp
           :value-type function))
+(make-obsolete-variable 'ctrlf-minibuffer-bindings 'ctrlf-minibuffer-mode-map
+                        "2021-09-07")
 
 (defcustom ctrlf-zero-length-match-width 0.2
   "Width of vertical bar to display for a zero-length match.
@@ -927,35 +977,66 @@ And self-destruct this hook."
 
 ;;;; Main entry point
 
+(defvar ctrlf--ctrlf-minibuffer-bindings-deprecation-warning t
+  "Show a deprecation warning when `ctrlf-minibuffer-bindings' is used.")
+
+(defun ctrlf--map-keymap (func keymap)
+  "Invoke FUNC for each binding in KEYMAP.
+FUNC is invoked with two arguments, the raw key sequence and the
+function that it is bound to. The behavior differs from
+`map-keymap' in that full key sequences are passed to FUNC rather
+than only prefixes."
+  (map-keymap
+   (lambda (key binding)
+     (if (keymapp binding)
+         (ctrlf--map-keymap
+          (lambda (keyseq binding)
+            (unless (vectorp keyseq)
+              (setq keyseq `[,keyseq]))
+            (funcall
+             func
+             (vconcat `[,key] keyseq)
+             binding))
+          binding)
+       (funcall func key binding)))
+   keymap))
+
 (defun ctrlf--start (&optional initial-contents position)
   "Start CTRLF session assuming config vars are set up already.
 Use optional INITIAL-CONTENTS as initial contents and POSITION as
 current starting point."
   (ctrlf--evil-set-jump)
-  (let ((keymap (make-sparse-keymap)))
-    (set-keymap-parent keymap minibuffer-local-map)
-    (map-apply
-     (lambda (key cmd)
-       (when (stringp key)
-         (setq key (kbd key)))
-       (define-key keymap key cmd))
-     ctrlf-minibuffer-bindings)
+  (let ((keymap nil))
+    (if (equal ctrlf-minibuffer-bindings
+               (eval (car (get 'ctrlf-minibuffer-bindings 'standard-value))))
+        (setq keymap ctrlf-minibuffer-mode-map)
+      ;; Else maintain backward compatibility
+      (when ctrlf--ctrlf-minibuffer-bindings-deprecation-warning
+        (ctrlf--message "Variable `ctrlf-minibuffer-bindings' is deprecated. \
+Please use `ctrlf-minibuffer-mode-map' to customize your keybindings instead.")
+        (setq ctrlf--ctrlf-minibuffer-bindings-deprecation-warning nil))
+      (setq keymap (make-sparse-keymap))
+      (set-keymap-parent keymap minibuffer-local-map)
+      (map-apply
+       (lambda (key cmd)
+         (when (stringp key)
+           (setq key (kbd key)))
+         (define-key keymap key cmd))
+       ctrlf-minibuffer-bindings))
     ;; Solve <https://github.com/raxod502/ctrlf/issues/51> without
     ;; introducing the problems summarized in
     ;; <https://github.com/raxod502/ctrlf/issues/80> and also reported
     ;; in <https://github.com/raxod502/ctrlf/issues/67> as well as
     ;; <https://github.com/raxod502/ctrlf/issues/52>.
-    (map-apply
+    (ctrlf--map-keymap
      (lambda (key _)
-       (when (stringp key)
-         (setq key (kbd key)))
        (pcase key
          (`[remap ,orig-cmd]
           (when-let ((global-key
                       (where-is-internal
                        orig-cmd global-map 'firstonly nil 'no-remap)))
             (define-key keymap global-key nil)))))
-     ctrlf-mode-bindings)
+     ctrlf-mode-map)
     (setq ctrlf--starting-point (point))
     (setq ctrlf--current-starting-point (or position (point)))
     (setq ctrlf--last-input nil)
@@ -1382,28 +1463,33 @@ search, change back to fuzzy-regexp search."
 
 ;;;; Minor mode
 
-;;;###autoload
-(defvar ctrlf--keymap (make-sparse-keymap)
-  "Keymap for `ctrlf-mode'. Populated when mode is enabled.
-See `ctrlf-mode-bindings'.")
+(defvar ctrlf--ctrlf-mode-bindings-deprecation-warning t
+  "Show a deprecation warning when `ctrlf-mode-bindings' is used.")
 
 ;;;###autoload
 (progn
   (define-minor-mode ctrlf-local-mode
-    "Minor mode to use CTRLF in place of Isearch.
-See `ctrlf-mode-bindings' to customize."
-    :keymap ctrlf--keymap
+    "Minor mode to use CTRLF in place of Isearch."
+    :keymap ctrlf-mode-map
     (require 'map)
-    (when ctrlf-local-mode
-      ;; Hack to clear out keymap. Presumably there's a `clear-keymap'
-      ;; function lying around somewhere...?
-      (setcdr ctrlf--keymap nil)
-      (map-apply
-       (lambda (key cmd)
-         (when (stringp key)
-           (setq key (kbd key)))
-         (define-key ctrlf--keymap key cmd))
-       ctrlf-mode-bindings))
+    (let ((default-ctrlf-mode-bindings
+            (eval (car (get 'ctrlf-mode-bindings 'standard-value)))))
+      (when (and ctrlf-local-mode
+                 default-ctrlf-mode-bindings
+                 (not (equal ctrlf-mode-bindings default-ctrlf-mode-bindings)))
+        (when ctrlf--ctrlf-mode-bindings-deprecation-warning
+          (message "Variable `ctrlf-mode-bindings' is deprecated. Please use \
+`ctrlf-mode-map' to customize your keybindings instead.")
+          (setq ctrlf--ctrlf-mode-bindings-deprecation-warning nil))
+        ;; Hack to clear out keymap. Presumably there's a `clear-keymap'
+        ;; function lying around somewhere...?
+        (setcdr ctrlf-mode-map nil)
+        (map-apply
+         (lambda (key cmd)
+           (when (stringp key)
+             (setq key (kbd key)))
+           (define-key ctrlf-mode-map key cmd))
+         ctrlf-mode-bindings)))
     (with-eval-after-load 'ctrlf
       ;; TODO: This appears to have a bug where if CTRLF is enabled
       ;; globally, then disabled in a particular buffer, then the
