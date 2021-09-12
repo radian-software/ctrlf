@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog].
   and the `ctrlf-minibuffer-mode-map` keymaps. Existing customization
   via `ctrlf-mode-bindings` and `ctrlf-minibuffer-bindings` are still
   available at the moment to remain backward compatibility but will be
-  deprecated in the future release.([#62])
+  removed in a future release ([#62]).
 
 ### Enhancements
 * When `ctrlf-auto-recenter` is enabled, recentering only begins after
