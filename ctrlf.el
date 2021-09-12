@@ -977,9 +977,8 @@ And self-destruct this hook."
 
 ;;;; Main entry point
 
-(defvar ctrlf--ctrlf-minibuffer-bindings-deprecation-warning nil
-  "Show a deprecation warning when `ctrlf-minibuffer-bindings' is used.
-This variable will default to non-nil in a future release.")
+(defvar ctrlf--ctrlf-minibuffer-bindings-deprecation-warning t
+  "Show a deprecation warning when `ctrlf-minibuffer-bindings' is used.")
 
 (defun ctrlf--map-keymap (func keymap)
   "Invoke FUNC for each binding in KEYMAP.
@@ -1464,9 +1463,8 @@ search, change back to fuzzy-regexp search."
 
 ;;;; Minor mode
 
-(defvar ctrlf--ctrlf-mode-bindings-deprecation-warning nil
-  "Show a deprecation warning when `ctrlf-mode-bindings' is used.
-This variable will default to non-nil in a future release.")
+(defvar ctrlf--ctrlf-mode-bindings-deprecation-warning t
+  "Show a deprecation warning when `ctrlf-mode-bindings' is used.")
 
 ;;;###autoload
 (progn
@@ -1480,8 +1478,7 @@ This variable will default to non-nil in a future release.")
                  default-ctrlf-mode-bindings
                  (not (equal ctrlf-mode-bindings default-ctrlf-mode-bindings)))
         (when ctrlf--ctrlf-mode-bindings-deprecation-warning
-          (ctrlf--message
-           "Variable `ctrlf-mode-bindings' is deprecated. Please use \
+          (message "Variable `ctrlf-mode-bindings' is deprecated. Please use \
 `ctrlf-mode-map' to customize your keybindings instead.")
           (setq ctrlf--ctrlf-mode-bindings-deprecation-warning nil))
         ;; Hack to clear out keymap. Presumably there's a `clear-keymap'
