@@ -981,6 +981,27 @@ And self-destruct this hook."
   "Show a deprecation warning when `ctrlf-minibuffer-bindings' is used.
 This variable will default to non-nil in a future release.")
 
+(defun ctrlf--map-keymap (func keymap)
+  "Invoke FUNC for each binding in KEYMAP.
+FUNC is invoked with two arguments, the raw key sequence and the
+function that it is bound to. The behavior differs from
+`map-keymap' in that full key sequences are passed to FUNC rather
+than only prefixes."
+  (map-keymap
+   (lambda (key binding)
+     (if (keymapp binding)
+         (ctrlf--map-keymap
+          (lambda (keyseq binding)
+            (unless (vectorp keyseq)
+              (setq keyseq `[,keyseq]))
+            (funcall
+             func
+             (vconcat `[,key] keyseq)
+             binding))
+          binding)
+       (funcall func key binding)))
+   keymap))
+
 (defun ctrlf--start (&optional initial-contents position)
   "Start CTRLF session assuming config vars are set up already.
 Use optional INITIAL-CONTENTS as initial contents and POSITION as
@@ -1008,7 +1029,7 @@ Please use `ctrlf-minibuffer-mode-map' to customize your keybindings instead.")
     ;; <https://github.com/raxod502/ctrlf/issues/80> and also reported
     ;; in <https://github.com/raxod502/ctrlf/issues/67> as well as
     ;; <https://github.com/raxod502/ctrlf/issues/52>.
-    (map-keymap
+    (ctrlf--map-keymap
      (lambda (key _)
        (pcase key
          (`[remap ,orig-cmd]
@@ -1016,7 +1037,7 @@ Please use `ctrlf-minibuffer-mode-map' to customize your keybindings instead.")
                       (where-is-internal
                        orig-cmd global-map 'firstonly nil 'no-remap)))
             (define-key keymap global-key nil)))))
-     keymap)
+     ctrlf-mode-map)
     (setq ctrlf--starting-point (point))
     (setq ctrlf--current-starting-point (or position (point)))
     (setq ctrlf--last-input nil)
