@@ -1503,8 +1503,20 @@ search, change back to fuzzy-regexp search."
                        #'ctrlf--minibuffer-message-condense)))))
 
 ;;;###autoload
+(defvar ctrlf--fake-mode-map (make-sparse-keymap)
+  "Empty keymap used to hack around an Emacs limitation.
+See https://github.com/raxod502/ctrlf/issues/103. Apparently,
+when you define a globalized minor mode, it forces you to
+associate a keymap with it, and for CTRLF the default name of
+this keymap is actually the keymap we are using for the local
+map, which has the consequence of the local keymap taking effect
+globally. The only workaround I could think of was to point the
+global mode with a fake empty keymap.")
+
+;;;###autoload
 (progn
-  (define-globalized-minor-mode ctrlf-mode ctrlf-local-mode ctrlf-local-mode))
+  (define-globalized-minor-mode ctrlf-mode ctrlf-local-mode ctrlf-local-mode
+    :keymap ctrlf--fake-mode-map))
 
 ;;;; Closing remarks
 
