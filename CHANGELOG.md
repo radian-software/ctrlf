@@ -34,6 +34,9 @@ The format is based on [Keep a Changelog].
 * When a regexp translation function throws an error, we now treat it
   like an invalid regexp rather than CTRLF breaking and not responding
   to further inputs.
+* CTRLF previously would crash when moving point over invisible text
+  that had a custom `isearch-open-invisible-temporary` property. This
+  has been fixed ([#100], [#101]).
 
 [#51]: https://github.com/raxod502/ctrlf/issues/51
 [#52]: https://github.com/raxod502/ctrlf/issues/52
@@ -43,6 +46,7 @@ The format is based on [Keep a Changelog].
 [#83]: https://github.com/raxod502/ctrlf/issues/83
 [#93]: https://github.com/raxod502/ctrlf/issues/93
 [#100]: https://github.com/raxod502/ctrlf/issues/100
+[#101]: https://github.com/raxod502/ctrlf/pull/101
 
 ## 1.3 (released 2021-02-26)
 ### Features
