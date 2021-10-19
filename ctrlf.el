@@ -709,7 +709,7 @@ Assume that S2 has the same properties throughout."
   (while ctrlf--opened-overlays
     (let ((ol (pop ctrlf--opened-overlays)))
       (if-let ((func (overlay-get ol 'isearch-open-invisible-temporary)))
-          (funcall func t)
+          (funcall func ol t)
         (overlay-put ol 'invisible (overlay-get ol 'ctrlf-orig-invisible))
         ;; I don't see a function for removing an overlay property, and
         ;; Isearch does it by setting the property to nil, so I assume
@@ -733,7 +733,7 @@ later (this should be used at the end of the search)."
             (funcall (overlay-get ol 'isearch-open-invisible) ol)
           (push ol ctrlf--opened-overlays)
           (if-let ((func (overlay-get ol 'isearch-open-invisible-temporary)))
-              (funcall func nil)
+              (funcall func ol nil)
             (overlay-put ol 'ctrlf-orig-invisible (overlay-get ol 'invisible))
             (overlay-put ol 'invisible nil)))))))
 
