@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
-## Unreleased
+## 1.4 (released 2021-12-27)
 ### Features
 * Add a new matching style for matching words ([#61]).
 * Add ability to customize default and alternative search styles
