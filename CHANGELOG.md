@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
+## Unreleased
+### Features
+* You can now customize more faces: `ctrlf-minibuffer-message-face`
+  and `ctrlf-in-buffer-message-face`, both of which inherit from
+  `ctrlf-message-face`, which defaults to inheriting from
+  `minibuffer-prompt` as per previous behavior ([#99]).
+
+[#99]: https://github.com/raxod502/ctrlf/issues/99
+
 ## 1.4 (released 2021-12-27)
 ### Features
 * Add a new matching style for matching words ([#61]).

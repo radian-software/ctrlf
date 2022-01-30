@@ -171,12 +171,15 @@ You can customize the visual appearance of CTRLF:
   typed `C-l` each time you moved to a new match. This feature is
   disabled by default.
 * The index of the currently selected match and the total number of
-  matches are displayed at the end of the minibuffer. If
-  `ctrlf-show-match-count-at-eol` is non-nil (the default), then this
-  information is also shown at the end of the current line in the
-  buffer being searched, which alleviates the problem of needing to
-  look back and forth between the minibuffer and the buffer being
-  searched.
+  matches are displayed at the end of the minibuffer (using face
+  `ctrlf-minibuffer-message-face`). If `ctrlf-show-match-count-at-eol`
+  is non-nil (the default), then this information is also shown at the
+  end of the current line in the buffer being searched (using face
+  `ctrlf-in-buffer-message-face`), which alleviates the problem of
+  needing to look back and forth between the minibuffer and the buffer
+  being searched. Both of the mentioned faces inherit from
+  `ctrlf-message-face`, as will future faces used by CTRLF to display
+  messages.
 * Zero-length matches (for example, in a regexp search for `^$` which
   would identify all blank lines the buffer) are displayed as thin
   vertical rectangles with a solid color since there is no text to

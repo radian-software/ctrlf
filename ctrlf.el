@@ -359,6 +359,18 @@ surrounded by word boundary constructs \\< and \\>."
   '((t :inherit hl-line))
   "Face used to highlight current line.")
 
+(defface ctrlf-message-face
+  '((t :inherit minibuffer-prompt))
+  "Base face used for message display. Other CTRLF faces inherit from this.")
+
+(defface ctrlf-minibuffer-message-face
+  '((t :inherit ctrlf-message-face))
+  "Face used to display CTRLF messages in the minibuffer.")
+
+(defface ctrlf-in-buffer-message-face
+  '((t :inherit ctrlf-message-face))
+  "Face used to display CTRLF messages in buffers other than the minibuffer.")
+
 ;;;;; Variables
 
 (defvar ctrlf-search-history nil
@@ -557,7 +569,13 @@ mess."
   (if (not ctrlf--minibuffer)
       (minibuffer-message format args)
     (let ((string (apply #'format (concat " [" format "]") args)))
-      (put-text-property 0 (length string) 'face 'minibuffer-prompt string)
+      (put-text-property
+       0 (length string)
+       'face
+       (if ctrlf--message-in-buffer-p
+           'ctrlf-in-buffer-message-face
+         'ctrlf-minibuffer-message-face)
+       string)
       (with-current-buffer ctrlf--minibuffer
         ;; Setting REAR-ADVANCE:
         ;; <https://github.com/raxod502/ctrlf/issues/4>
