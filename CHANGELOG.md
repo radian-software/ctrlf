@@ -10,7 +10,12 @@ The format is based on [Keep a Changelog].
   `ctrlf-message-face`, which defaults to inheriting from
   `minibuffer-prompt` as per previous behavior ([#99]).
 
+### Bugs fixed
+* The window is now less likely to randomly get its scroll position
+  changed when exiting a search ([#113]).
+
 [#99]: https://github.com/raxod502/ctrlf/issues/99
+[#113]: https://github.com/raxod502/ctrlf/pull/113
 
 ## 1.4 (released 2021-12-27)
 ### Features
