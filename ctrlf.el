@@ -1492,7 +1492,9 @@ search, change back to fuzzy-regexp search."
     "Minor mode to use CTRLF in place of Isearch."
     :keymap ctrlf-mode-map
     (require 'map)
-    (let ((default-ctrlf-mode-bindings
+    ;; Weird indentation to make things indent the same in both Emacs
+    ;; 28 and Emacs 29, because apparently something changed?
+    (let (( default-ctrlf-mode-bindings
             (eval (car (get 'ctrlf-mode-bindings 'standard-value)))))
       (when (and ctrlf-local-mode
                  default-ctrlf-mode-bindings
