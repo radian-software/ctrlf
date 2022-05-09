@@ -1,10 +1,10 @@
 ;;; ctrlf.el --- Emacs finally learns how to ctrl+F -*- lexical-binding: t -*-
 
-;; Copyright (C) 2019 Radon Rosborough
+;; Copyright (C) 2019-2022 Radian LLC and contributors
 
-;; Author: Radon Rosborough <radon.neon@gmail.com>
+;; Author: Radian LLC <contact+ctrlf@radian.codes>
 ;; Created: 23 Dec 2019
-;; Homepage: https://github.com/raxod502/ctrlf
+;; Homepage: https://github.com/radian-software/ctrlf
 ;; Keywords: extensions
 ;; Package-Requires: ((emacs "25.1"))
 ;; SPDX-License-Identifier: MIT
@@ -20,7 +20,7 @@
 ;; Isearch, CTRLF improves on existing text search solutions in
 ;; convenience, robustness, and consistency.
 
-;; Please see https://github.com/raxod502/ctrlf for more
+;; Please see https://github.com/radian-software/ctrlf for more
 ;; information.
 
 ;;; Code:
@@ -57,7 +57,7 @@ return nil."
   "More streamlined replacement for Isearch, Swiper, etc."
   :group 'convenience
   :prefix "ctrlf-"
-  :link '(url-link "https://github.com/raxod502/ctrlf"))
+  :link '(url-link "https://github.com/radian-software/ctrlf"))
 
 ;;;;; User options
 
@@ -264,7 +264,7 @@ styles defined in `ctrlf-style-alist'"
 ;;;;; Functions for use in configuration
 
 ;; Stolen (with love) from
-;; <https://github.com/raxod502/prescient.el/blob/7fd8c3b8028da4733434940c4aac1209281bef58/prescient.el#L242-L288>.
+;; <https://github.com/radian-software/prescient.el/blob/7fd8c3b8028da4733434940c4aac1209281bef58/prescient.el#L242-L288>.
 (defun ctrlf-split-fuzzy (input)
   "Split INPUT string into subinputs.
 The input is split on spaces, but a sequence of two or more
@@ -578,7 +578,7 @@ mess."
        string)
       (with-current-buffer ctrlf--minibuffer
         ;; Setting REAR-ADVANCE:
-        ;; <https://github.com/raxod502/ctrlf/issues/4>
+        ;; <https://github.com/radian-software/ctrlf/issues/4>
         (let ((ol (make-overlay
                    (point-max) (point-max) nil nil 'rear-advance)))
           (push ol ctrlf--overlays)
@@ -687,7 +687,7 @@ Will add search pattern STR to evil's search history ring."
 (defun ctrlf--minibuffer-before-change-function (&rest _)
   "Prepare for user input."
   ;; Clear overlays pre-emptively. See
-  ;; <https://github.com/raxod502/ctrlf/issues/1>.
+  ;; <https://github.com/radian-software/ctrlf/issues/1>.
   (ctrlf--delete-transient-overlays))
 
 ;;;;; Bookkeeping variables
@@ -841,7 +841,7 @@ later (this should be used at the end of the search)."
             (setq ctrlf--case-fold-search-toggled nil))
           (when ctrlf--match-bounds
             ;; Make sure the match is visible. See:
-            ;; <https://github.com/raxod502/ctrlf/issues/23>
+            ;; <https://github.com/radian-software/ctrlf/issues/23>
             ;; <https://github.com/abo-abo/swiper/blob/64f05f4735bba8b708bc12cfc2cbfb7fb7706787/swiper.el#L878-L885>
             (ctrlf--restore-all-invisible-overlays)
             (ctrlf--disable-invisible-overlays-at-point)
@@ -857,11 +857,12 @@ later (this should be used at the end of the search)."
             ;; the last redisplay, which means since we moved point we
             ;; would need to force a redisplay to get the right
             ;; values. Doing that leads to
-            ;; <https://github.com/raxod502/ctrlf/issues/18>, so I
-            ;; came up with the workaround of just being conservative
-            ;; and highlighting a little more than we need, to be sure
-            ;; that we get everything necessary, without having to
-            ;; highlight the whole buffer which would be very slow.
+            ;; <https://github.com/radian-software/ctrlf/issues/18>,
+            ;; so I came up with the workaround of just being
+            ;; conservative and highlighting a little more than we
+            ;; need, to be sure that we get everything necessary,
+            ;; without having to highlight the whole buffer which
+            ;; would be very slow.
             (let* ((window-height (window-body-height
                                    (minibuffer-selected-window)))
                    (start (save-excursion
@@ -1043,11 +1044,12 @@ Please use `ctrlf-minibuffer-mode-map' to customize your keybindings instead.")
            (setq key (kbd key)))
          (define-key keymap key cmd))
        ctrlf-minibuffer-bindings))
-    ;; Solve <https://github.com/raxod502/ctrlf/issues/51> without
-    ;; introducing the problems summarized in
-    ;; <https://github.com/raxod502/ctrlf/issues/80> and also reported
-    ;; in <https://github.com/raxod502/ctrlf/issues/67> as well as
-    ;; <https://github.com/raxod502/ctrlf/issues/52>.
+    ;; Solve <https://github.com/radian-software/ctrlf/issues/51>
+    ;; without introducing the problems summarized in
+    ;; <https://github.com/radian-software/ctrlf/issues/80> and also
+    ;; reported in
+    ;; <https://github.com/radian-software/ctrlf/issues/67> as well as
+    ;; <https://github.com/radian-software/ctrlf/issues/52>.
     (ctrlf--map-keymap
      (lambda (key _)
        (pcase key
@@ -1298,7 +1300,7 @@ different behavior, for which see `recenter-top-bottom'."
   (interactive)
   (ctrlf--delete-all-overlays)
   (set-window-point (minibuffer-selected-window) ctrlf--starting-point)
-  ;; Dirty hack to solve <https://github.com/raxod502/ctrlf/issues/6>.
+  ;; Dirty hack to solve <https://github.com/radian-software/ctrlf/issues/6>.
   (redisplay)
   (abort-recursive-edit))
 
@@ -1527,13 +1529,13 @@ search, change back to fuzzy-regexp search."
 ;;;###autoload
 (defvar ctrlf--fake-mode-map (make-sparse-keymap)
   "Empty keymap used to hack around an Emacs limitation.
-See https://github.com/raxod502/ctrlf/issues/103. Apparently,
-when you define a globalized minor mode, it forces you to
-associate a keymap with it, and for CTRLF the default name of
-this keymap is actually the keymap we are using for the local
+See https://github.com/radian-software/ctrlf/issues/103.
+Apparently, when you define a globalized minor mode, it forces
+you to associate a keymap with it, and for CTRLF the default name
+of this keymap is actually the keymap we are using for the local
 map, which has the consequence of the local keymap taking effect
 globally. The only workaround I could think of was to point the
-global mode with a fake empty keymap.")
+global mode at a fake empty keymap.")
 
 ;;;###autoload
 (progn

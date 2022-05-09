@@ -14,8 +14,8 @@ The format is based on [Keep a Changelog].
 * The window is now less likely to randomly get its scroll position
   changed when exiting a search ([#113]).
 
-[#99]: https://github.com/raxod502/ctrlf/issues/99
-[#113]: https://github.com/raxod502/ctrlf/pull/113
+[#99]: https://github.com/radian-software/ctrlf/issues/99
+[#113]: https://github.com/radian-software/ctrlf/pull/113
 
 ## 1.4 (released 2021-12-27)
 ### Features
@@ -57,16 +57,16 @@ The format is based on [Keep a Changelog].
   that had a custom `isearch-open-invisible-temporary` property. This
   has been fixed ([#100], [#101]).
 
-[#51]: https://github.com/raxod502/ctrlf/issues/51
-[#52]: https://github.com/raxod502/ctrlf/issues/52
-[#61]: https://github.com/raxod502/ctrlf/issues/61
-[#62]: https://github.com/raxod502/ctrlf/issues/62
-[#67]: https://github.com/raxod502/ctrlf/issues/67
-[#80]: https://github.com/raxod502/ctrlf/issues/80
-[#83]: https://github.com/raxod502/ctrlf/issues/83
-[#93]: https://github.com/raxod502/ctrlf/issues/93
-[#100]: https://github.com/raxod502/ctrlf/issues/100
-[#101]: https://github.com/raxod502/ctrlf/pull/101
+[#51]: https://github.com/radian-software/ctrlf/issues/51
+[#52]: https://github.com/radian-software/ctrlf/issues/52
+[#61]: https://github.com/radian-software/ctrlf/issues/61
+[#62]: https://github.com/radian-software/ctrlf/issues/62
+[#67]: https://github.com/radian-software/ctrlf/issues/67
+[#80]: https://github.com/radian-software/ctrlf/issues/80
+[#83]: https://github.com/radian-software/ctrlf/issues/83
+[#93]: https://github.com/radian-software/ctrlf/issues/93
+[#100]: https://github.com/radian-software/ctrlf/issues/100
+[#101]: https://github.com/radian-software/ctrlf/pull/101
 
 ## 1.3 (released 2021-02-26)
 ### Features
@@ -79,9 +79,9 @@ The format is based on [Keep a Changelog].
   was included in [#59]. This integration happens automatically and
   requires no user input/customisation.
 
-[#59]: https://github.com/raxod502/ctrlf/issues/59
-[#66]: https://github.com/raxod502/ctrlf/issues/66
-[#73]: https://github.com/raxod502/ctrlf/pull/73
+[#59]: https://github.com/radian-software/ctrlf/issues/59
+[#66]: https://github.com/radian-software/ctrlf/issues/66
+[#73]: https://github.com/radian-software/ctrlf/pull/73
 
 ## 1.2 (released 2020-10-20)
 ### Features
@@ -105,12 +105,12 @@ The format is based on [Keep a Changelog].
   any other command that uses the minibuffer. This has now been fixed
   ([#55]).
 
-[#48]: https://github.com/raxod502/ctrlf/issues/48
-[#50]: https://github.com/raxod502/ctrlf/pull/50
-[#51]: https://github.com/raxod502/ctrlf/issues/51
-[#52]: https://github.com/raxod502/ctrlf/issues/52
-[#53]: https://github.com/raxod502/ctrlf/pull/53
-[#55]: https://github.com/raxod502/ctrlf/issues/55
+[#48]: https://github.com/radian-software/ctrlf/issues/48
+[#50]: https://github.com/radian-software/ctrlf/pull/50
+[#51]: https://github.com/radian-software/ctrlf/issues/51
+[#52]: https://github.com/radian-software/ctrlf/issues/52
+[#53]: https://github.com/radian-software/ctrlf/pull/53
+[#55]: https://github.com/radian-software/ctrlf/issues/55
 
 ## 1.1 (released 2020-07-16)
 ### Enhancements
@@ -129,10 +129,10 @@ The format is based on [Keep a Changelog].
 * Several corner cases relating to minibuffer overlays have been fixed
   by improving the generality of the overlay management code ([#46]).
 
-[#41]: https://github.com/raxod502/ctrlf/issues/41
-[#45]: https://github.com/raxod502/ctrlf/issues/45
-[#46]: https://github.com/raxod502/ctrlf/issues/46
-[#49]: https://github.com/raxod502/ctrlf/issues/49
+[#41]: https://github.com/radian-software/ctrlf/issues/41
+[#45]: https://github.com/radian-software/ctrlf/issues/45
+[#46]: https://github.com/radian-software/ctrlf/issues/46
+[#49]: https://github.com/radian-software/ctrlf/issues/49
 
 ## 1.0 (released 2020-03-31)
 ### Added

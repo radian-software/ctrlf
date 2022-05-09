@@ -340,4 +340,4 @@ window.
 ## Contributing
 
 Please see [the contributor guide for my
-projects](https://github.com/raxod502/contributor-guide).
+projects](https://github.com/radian-software/contributor-guide).
