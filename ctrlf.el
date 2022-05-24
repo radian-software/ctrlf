@@ -177,6 +177,7 @@ active in the minibuffer during a search."
     ;; we have to account for it too.
     (define-key keymap [remap abort-recursive-edit] #'ctrlf-cancel)
     (define-key keymap [remap minibuffer-keyboard-quit] #'ctrlf-cancel)
+    (define-key keymap [remap abort-minibuffers] #'ctrlf-cancel)
     ;; Use `minibuffer-beginning-of-buffer' for Emacs >=27 and
     ;; `beginning-of-buffer' for Emacs <=26.
     (define-key keymap [remap minibuffer-beginning-of-buffer]
