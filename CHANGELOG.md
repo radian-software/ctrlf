@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
-## Unreleased
+## 1.5 (released 2022-06-01)
 ### Features
 * You can now customize more faces: `ctrlf-minibuffer-message-face`
   and `ctrlf-in-buffer-message-face`, both of which inherit from
