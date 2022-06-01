@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
 ## Unreleased
+### Bugs fixed
+* Previously `C-g` would fail to reset point to its original position
+  in some cases. This has been fixed ([#110], [#114]).
+
+[#110]: https://github.com/radian-software/ctrlf/issues/110
+[#114]: https://github.com/radian-software/ctrlf/pull/114
+
+## 1.5 (released 2022-06-01)
 ### Features
 * You can now customize more faces: `ctrlf-minibuffer-message-face`
   and `ctrlf-in-buffer-message-face`, both of which inherit from
@@ -13,13 +21,9 @@ The format is based on [Keep a Changelog].
 ### Bugs fixed
 * The window is now less likely to randomly get its scroll position
   changed when exiting a search ([#113]).
-* Previously `C-g` would fail to reset point to its original position
-  in some cases. This has been fixed ([#110], [#114]).
 
 [#99]: https://github.com/radian-software/ctrlf/issues/99
-[#110]: https://github.com/radian-software/ctrlf/issues/110
 [#113]: https://github.com/radian-software/ctrlf/pull/113
-[#114]: https://github.com/radian-software/ctrlf/pull/114
 
 ## 1.4 (released 2021-12-27)
 ### Features
