@@ -191,7 +191,9 @@ You can also customize the keybindings:
 * `ctrlf-mode-map` lists keybindings that are made globally available
   in Emacs when `ctrlf-mode` is enabled.
 * `ctrlf-minibuffer-mode-map` lists keybindings that are made
-  available in the minibuffer during a CTRLF search session.
+  available in the minibuffer during a CTRLF search session. (Note:
+  Customising this variable needs to happen after ctrlf is loaded, use
+  `(with-eval-after-load 'ctrlf ...)`)
 
 In addition to the functions already bound in
 `ctrlf-minibuffer-mode-map`, you can choose to bind `ctrlf-next-match`
