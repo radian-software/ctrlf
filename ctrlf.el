@@ -677,10 +677,13 @@ Will add search pattern STR to evil's search history ring."
          (setq isearch-string str))
         (evil-search
          (add-to-history 'evil-ex-search-history str)
-         (setq evil-ex-search-pattern (list str nil t))
-         (setq evil-ex-search-direction 'forward)
-         (when evil-ex-search-persistent-highlight
-           (evil-ex-search-activate-highlight evil-ex-search-pattern))))))
+         (let* ((style-plist (alist-get ctrlf--style ctrlf-style-alist))
+                (translator (plist-get style-plist :translator))
+                (translated-str (funcall translator str)))
+           (setq evil-ex-search-direction 'forward
+                 evil-ex-search-pattern (list translated-str nil t))
+           (when evil-ex-search-persistent-highlight
+             (evil-ex-search-activate-highlight evil-ex-search-pattern)))))))
   str)
 
 ;;;; Main loop
