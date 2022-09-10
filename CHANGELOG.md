@@ -8,14 +8,13 @@ The format is based on [Keep a Changelog].
 * Improved evil-mode's search history integration so it will now use
   the translations defined in `ctrlf-style-alist` ([#124]).
 
-[#124]: https://github.com/radian-software/ctrlf/pull/124
-
 ### Bugs fixed
 * Previously `C-g` would fail to reset point to its original position
   in some cases. This has been fixed ([#110], [#114]).
 
 [#110]: https://github.com/radian-software/ctrlf/issues/110
 [#114]: https://github.com/radian-software/ctrlf/pull/114
+[#124]: https://github.com/radian-software/ctrlf/pull/124
 
 ## 1.5 (released 2022-06-01)
 ### Features
