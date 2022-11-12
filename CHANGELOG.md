@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
-## Unreleased
+## 1.6 (released 2022-11-11)
 ### Enhancements
 * Improved evil-mode's search history integration so it will now use
   the translations defined in `ctrlf-style-alist` ([#124]).
