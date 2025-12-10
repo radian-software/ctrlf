@@ -981,9 +981,9 @@ I have literally no idea why this is needed.")
 And self-destruct this hook."
   (remove-hook 'post-command-hook #'ctrlf--finalize)
   (unless (= (point) ctrlf--starting-point)
-    (if ctrlf-auto-recenter
-        (set-window-start (get-buffer-window) ctrlf--final-window-start)
-      (push-mark ctrlf--starting-point))))
+    (when ctrlf-auto-recenter
+      (set-window-start (get-buffer-window) ctrlf--final-window-start))
+    (push-mark ctrlf--starting-point)))
 
 (defun ctrlf--minibuffer-exit-hook ()
   "Clean up CTRLF from minibuffer and self-destruct this hook."
