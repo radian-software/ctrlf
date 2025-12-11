@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
+## [Unreleased]
+### Bugs fixed
+* Point at start of search wasn't being added to the mark ring when
+  `ctrlf-auto-recenter` was enabled ([#133]).
+
 ## 1.6 (released 2022-11-11)
 ### Enhancements
 * Improved evil-mode's search history integration so it will now use
