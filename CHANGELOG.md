@@ -3,10 +3,12 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog].
 
-## [Unreleased]
+## 1.6.1 (released 2026-02-21)
 ### Bugs fixed
 * Point at start of search wasn't being added to the mark ring when
   `ctrlf-auto-recenter` was enabled ([#133]).
+
+[#133]: https://github.com/radian-software/ctrlf/pull/133
 
 ## 1.6 (released 2022-11-11)
 ### Enhancements

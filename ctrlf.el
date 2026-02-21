@@ -8,7 +8,7 @@
 ;; Keywords: extensions
 ;; Package-Requires: ((emacs "25.1"))
 ;; SPDX-License-Identifier: MIT
-;; Version: 1.6
+;; Version: 1.6.1
 
 ;;; Commentary:
 
@@ -132,12 +132,12 @@ search already."
     (define-key keymap [remap isearch-forward] #'ctrlf-forward-default)
     (define-key keymap [remap isearch-backward] #'ctrlf-backward-default)
     (define-key keymap [remap isearch-forward-regexp]
-      #'ctrlf-forward-alternate)
+                #'ctrlf-forward-alternate)
     (define-key keymap [remap isearch-backward-regexp]
-      #'ctrlf-backward-alternate)
+                #'ctrlf-backward-alternate)
     (define-key keymap [remap isearch-forward-symbol] #'ctrlf-forward-symbol)
     (define-key keymap [remap isearch-forward-symbol-at-point]
-      #'ctrlf-forward-symbol-at-point)
+                #'ctrlf-forward-symbol-at-point)
     keymap)
   "Keymap used by CTRLF globally."
   :type 'sexp)
@@ -181,7 +181,7 @@ active in the minibuffer during a search."
     ;; Use `minibuffer-beginning-of-buffer' for Emacs >=27 and
     ;; `beginning-of-buffer' for Emacs <=26.
     (define-key keymap [remap minibuffer-beginning-of-buffer]
-      #'ctrlf-first-match)
+                #'ctrlf-first-match)
     (define-key keymap [remap beginning-of-buffer] #'ctrlf-first-match)
     (define-key keymap [remap end-of-buffer] #'ctrlf-last-match)
     (define-key keymap [remap scroll-up-command] #'ctrlf-next-page)
